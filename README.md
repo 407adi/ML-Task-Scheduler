@@ -104,6 +104,12 @@ The easiest way to run the entire ecosystem is using the provided PowerShell hel
 
 For Google sign-in in Docker, make sure `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set in your local `backend/.env` or root `.env`, and register `http://localhost:3001/api/v1/auth/google/callback` in Google Cloud Console.
 
+Google Cloud project details:
+- Project ID: `ml-task-schedule`
+- Project Number: `988268829955`
+- Cloud Hub: https://console.cloud.google.com/cloud-hub/home?project=ml-task-schedule
+- Project settings: https://console.cloud.google.com/home/dashboard?project=ml-task-schedule
+
 **Linux / Generic:**
 ```bash
 # Start all 7 services (DB, Redis, Backend, ML, Frontend, Prometheus, Grafana)

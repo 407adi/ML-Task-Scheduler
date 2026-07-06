@@ -2,6 +2,119 @@
 
 This guide covers deploying the ML Task Scheduler to a production environment.
 
+## Cloud Deployment
+
+This repository is configured for a split cloud deployment:
+
+- Backend API, ML worker, and PostgreSQL are managed by Render via [render.yaml](../render.yaml)
+- Frontend is managed separately through Vercel via [vercel.json](../vercel.json)
+- Preview environments are enabled in the Render blueprint for pull-request deployments
+
+Required cloud values are still environment-specific and must be set in your hosting dashboards:
+
+- `JWT_SECRET`
+- `CORS_ORIGIN`
+- `DATABASE_URL`
+- `REDIS_URL`
+- `GOOGLE_CLIENT_ID`
+- `GOOGLE_CLIENT_SECRET`
+
+The current OAuth 2.0 client ID in this project is:
+
+- `988268829955-5eg73ov4qp20uuqdsnr64t9fd84hc8tn.apps.googleusercontent.com`
+
+If you are deploying from GitHub, make sure the repository is linked to both hosting providers and that the Render blueprint is synced after any blueprint changes.
+
+### Google Cloud Project
+
+Use this Google Cloud project for OAuth credentials and any future GCP integrations:
+
+- Project ID: `ml-task-schedule`
+- Project Number: `988268829955`
+- Cloud Hub: [Google Cloud Cloud Hub](https://console.cloud.google.com/cloud-hub/home?project=ml-task-schedule)
+- Project settings: [Google Cloud Console](https://console.cloud.google.com/home/dashboard?project=ml-task-schedule)
+
+Google sign-in is wired through the backend OAuth flow, so the authorized redirect URI must be added to the OAuth client in this project.
+
+### Google Cloud Run + Artifact Registry
+
+Use this path if you want to deploy the backend and ML service on Google Cloud instead of Render.
+
+Recommended structure:
+
+- Artifact Registry stores the container images
+- Cloud Run hosts the backend API and ML service
+- Vercel can continue hosting the frontend, or you can move it later if needed
+
+#### 1. Enable required APIs
+
+```bash
+gcloud config set project ml-task-schedule
+gcloud services enable run.googleapis.com artifactregistry.googleapis.com cloudbuild.googleapis.com secretmanager.googleapis.com
+```
+
+#### 2. Create an Artifact Registry repository
+
+```bash
+gcloud artifacts repositories create ml-task-scheduler \
+  --repository-format=docker \
+  --location=us-central1 \
+  --description="ML Task Scheduler container images"
+```
+
+#### 3. Configure Docker authentication
+
+```bash
+gcloud auth configure-docker us-central1-docker.pkg.dev
+```
+
+#### 4. Build and push images
+
+```bash
+docker build -t us-central1-docker.pkg.dev/ml-task-schedule/ml-task-scheduler/backend:latest ./backend
+docker build -t us-central1-docker.pkg.dev/ml-task-schedule/ml-task-scheduler/ml-service:latest ./ml-service
+
+docker push us-central1-docker.pkg.dev/ml-task-schedule/ml-task-scheduler/backend:latest
+docker push us-central1-docker.pkg.dev/ml-task-schedule/ml-task-scheduler/ml-service:latest
+```
+
+#### 5. Deploy to Cloud Run
+
+```bash
+gcloud run deploy ml-task-scheduler-backend \
+  --image=us-central1-docker.pkg.dev/ml-task-schedule/ml-task-scheduler/backend:latest \
+  --region=us-central1 \
+  --platform=managed \
+  --allow-unauthenticated \
+  --set-env-vars=NODE_ENV=production,FRONTEND_URL=https://your-frontend-domain,CORS_ORIGIN=https://your-frontend-domain
+
+gcloud run deploy ml-task-scheduler-ml \
+  --image=us-central1-docker.pkg.dev/ml-task-schedule/ml-task-scheduler/ml-service:latest \
+  --region=us-central1 \
+  --platform=managed \
+  --allow-unauthenticated \
+  --set-env-vars=FLASK_ENV=production
+```
+
+#### 6. Store secrets in Secret Manager
+
+Keep sensitive values out of the image and inject them at deploy time:
+
+```bash
+printf '%s' 'your-jwt-secret' | gcloud secrets create jwt-secret --data-file=-
+printf '%s' 'your-google-client-secret' | gcloud secrets create google-client-secret --data-file=-
+```
+
+When deploying, bind secrets to environment variables with `--set-secrets`.
+
+#### 7. Update OAuth redirect URIs
+
+Add your Cloud Run backend URL to the Google OAuth client in Cloud Hub:
+
+- `https://YOUR_BACKEND_SERVICE_URL/api/v1/auth/google/callback`
+
+If you keep the frontend on Vercel, also add the Vercel domain to the OAuth consent and redirect configuration as needed.
+
 ## Table of Contents
 
 1. [Prerequisites](#prerequisites)
