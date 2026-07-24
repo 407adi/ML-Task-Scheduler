@@ -19,11 +19,14 @@ services:
           name: postgres
           property: connectionString
       - key: REDIS_URL
-        value: redis://redis:6379
+        fromService:
+          type: redis
+          name: redis
+          property: connectionString
       - key: JWT_SECRET
         sync: false
       - key: CORS_ORIGIN
-        value: https://YOUR_FRONTEND_URL.onrender.com
+        value: https://ml-task-scheduler.vercel.app
     dockerfilePath: ./backend/Dockerfile
     dockerContext: ./backend
 
@@ -41,12 +44,23 @@ services:
         fromDatabase:
           name: postgres
           property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: redis
+          property: connectionString
     dockerfilePath: ./ml-service/Dockerfile
     dockerContext: ./ml-service
 
 databases:
   # PostgreSQL Database
   - name: postgres
+    plan: free
+    region: oregon
+    ipAllowList: []
+
+  # Redis Cache & Queue Store
+  - name: redis
     plan: free
     region: oregon
     ipAllowList: []

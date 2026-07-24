@@ -33,7 +33,7 @@ spec:
       serviceAccountName: ml-worker-service-account
       containers:
         - name: ml-worker
-          image: ghcr.io/your-org/ml-scheduler-ml:latest
+          image: ghcr.io/shri33/ml-scheduler-ml:latest
           imagePullPolicy: Always
           ports:
             - name: http

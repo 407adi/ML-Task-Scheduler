@@ -1,25 +1,51 @@
-import { useState } from 'react';
-import { Plus, Search, Edit, Trash2, AlertCircle, Settings, Database, BarChart2, Cpu, Lock } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Plus, Search, Edit, Trash2, AlertCircle, Settings, Database, BarChart2, Cpu, Lock, Loader2 } from 'lucide-react';
 import { clsx } from 'clsx';
-import DemoModeBanner from '../components/DemoModeBanner';
+import { userApi } from '../lib/api';
 
-const PERMISSIONS = [
-  { id: 1, name: 'Manage Algorithm Lifecycle', assignedTo: ['Lead Researcher', 'Algorithm Developer'], createdDate: '14 Apr 2024, 08:43 PM' },
-  { id: 2, name: 'Trigger Distributed Benchmark', assignedTo: ['Lead Researcher', 'Data Scientist'], createdDate: '12 Apr 2024, 10:20 AM' },
-  { id: 3, name: 'View Real-time Node Telemetry', assignedTo: ['Lead Researcher', 'Node Maintainer', 'Data Scientist'], createdDate: '10 Apr 2024, 09:15 AM' },
-  { id: 4, name: 'Access Raw Dataset Logs', assignedTo: ['Lead Researcher', 'Data Scientist'], createdDate: '08 Apr 2024, 04:30 PM' },
-  { id: 5, name: 'Modify Fog Node Configs', assignedTo: ['Node Maintainer'], createdDate: '06 Apr 2024, 11:00 AM' },
-  { id: 6, name: 'Export Experiment Results', assignedTo: ['Lead Researcher', 'Data Scientist', 'Subscriber'], createdDate: '04 Apr 2024, 02:45 PM' },
-  { id: 7, name: 'Manage System Security', assignedTo: ['Security Auditor', 'Lead Researcher'], createdDate: '02 Apr 2024, 05:30 PM' },
+// Default permissions for research pipeline — loaded from static config
+// but assigned-to roles now reflect actual system RBAC roles
+const DEFAULT_PERMISSIONS = [
+  { id: 1, name: 'Manage Algorithm Lifecycle', roles: ['ADMIN'], createdDate: '14 Apr 2024, 08:43 PM' },
+  { id: 2, name: 'Trigger Distributed Benchmark', roles: ['ADMIN', 'USER'], createdDate: '12 Apr 2024, 10:20 AM' },
+  { id: 3, name: 'View Real-time Node Telemetry', roles: ['ADMIN', 'USER', 'VIEWER'], createdDate: '10 Apr 2024, 09:15 AM' },
+  { id: 4, name: 'Access Raw Dataset Logs', roles: ['ADMIN', 'USER'], createdDate: '08 Apr 2024, 04:30 PM' },
+  { id: 5, name: 'Modify Fog Node Configs', roles: ['ADMIN'], createdDate: '06 Apr 2024, 11:00 AM' },
+  { id: 6, name: 'Export Experiment Results', roles: ['ADMIN', 'USER', 'VIEWER'], createdDate: '04 Apr 2024, 02:45 PM' },
+  { id: 7, name: 'Manage System Security', roles: ['ADMIN'], createdDate: '02 Apr 2024, 05:30 PM' },
 ];
+
+interface User {
+  id: string;
+  email: string;
+  role: string;
+  isActive: boolean;
+}
 
 export default function Permissions() {
   const [searchTerm, setSearchTerm] = useState('');
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    userApi.getAll()
+      .then(res => setUsers(Array.isArray(res) ? res : []))
+      .catch(() => setUsers([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  // Build role-to-user-count mapping from actual API data
+  const roleCounts: Record<string, number> = {};
+  users.forEach(u => {
+    roleCounts[u.role] = (roleCounts[u.role] || 0) + 1;
+  });
+
+  const filteredPermissions = DEFAULT_PERMISSIONS.filter(perm =>
+    perm.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="max-w-[1600px] mx-auto space-y-8 animate-fade-in">
-      <DemoModeBanner featureName="Permission Management" />
-      
       {/* ── HEADER ── */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -30,6 +56,40 @@ export default function Permissions() {
           <Plus className="w-5 h-5" /> Add Permission
         </button>
       </div>
+
+      {/* ── ROLE SUMMARY CARDS ── */}
+      {loading ? (
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="w-6 h-6 animate-spin text-primary-600" />
+          <span className="ml-2 text-gray-500">Loading user roles...</span>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {['ADMIN', 'USER', 'VIEWER'].map(role => (
+            <div key={role} className="bg-white dark:bg-[#1a2234] rounded-2xl p-5 border border-gray-200 dark:border-gray-800 shadow-sm">
+              <div className="flex items-center gap-3 mb-2">
+                <div className={clsx(
+                  "w-10 h-10 rounded-xl flex items-center justify-center",
+                  role === 'ADMIN' ? "bg-rose-100 dark:bg-rose-900/20" :
+                  role === 'USER' ? "bg-primary-100 dark:bg-primary-900/20" :
+                  "bg-gray-100 dark:bg-gray-800"
+                )}>
+                  <Lock className={clsx(
+                    "w-5 h-5",
+                    role === 'ADMIN' ? "text-rose-600" :
+                    role === 'USER' ? "text-primary-600" :
+                    "text-gray-500"
+                  )} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">{role}</h3>
+                  <p className="text-sm text-gray-500">{roleCounts[role] || 0} users</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* ── INFO ALERT ── */}
       <div className="flex items-start gap-4 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800 rounded-2xl">
@@ -60,47 +120,51 @@ export default function Permissions() {
             <thead>
               <tr className="bg-gray-50 dark:bg-gray-900/50 text-[10px] font-black uppercase tracking-widest text-gray-500 border-b border-gray-100 dark:border-gray-800">
                 <th className="px-6 py-4">Name</th>
-                <th className="px-6 py-4">Assigned To</th>
+                <th className="px-6 py-4">Assigned Roles</th>
+                <th className="px-6 py-4">Users with Access</th>
                 <th className="px-6 py-4">Created Date</th>
                 <th className="px-6 py-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-              {PERMISSIONS.map(perm => (
-                <tr key={perm.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-all group">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                       <PermissionIcon name={perm.name} />
-                       <span className="text-sm font-bold text-gray-900 dark:text-white">{perm.name}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex flex-wrap gap-2">
-                      {perm.assignedTo.map(role => (
-                        <span 
-                          key={role} 
-                          className={clsx(
-                            "px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-tighter",
-                            role === 'Lead Researcher' ? "bg-primary-100 text-primary-700" :
-                            role === 'Node Maintainer' ? "bg-purple-100 text-purple-700" :
-                            role === 'Data Scientist' ? "bg-blue-100 text-blue-700" :
-                            "bg-gray-100 text-gray-700"
-                          )}
-                        >
-                          {role}
-                        </span>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-500">{perm.createdDate}</td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-1">
-                       <button className="p-2 text-gray-400 hover:text-primary-600 transition-colors"><Edit className="w-4 h-4" /></button>
-                       <button className="p-2 text-gray-400 hover:text-red-500 transition-colors"><Trash2 className="w-4 h-4" /></button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {filteredPermissions.map(perm => {
+                const accessCount = perm.roles.reduce((sum, r) => sum + (roleCounts[r] || 0), 0);
+                return (
+                  <tr key={perm.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-all group">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                         <PermissionIcon name={perm.name} />
+                         <span className="text-sm font-bold text-gray-900 dark:text-white">{perm.name}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex flex-wrap gap-2">
+                        {perm.roles.map(role => (
+                          <span 
+                            key={role} 
+                            className={clsx(
+                              "px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-tighter",
+                              role === 'ADMIN' ? "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400" :
+                              role === 'USER' ? "bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400" :
+                              "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400"
+                            )}
+                          >
+                            {role}
+                          </span>
+                        ))}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300 font-semibold">{accessCount}</td>
+                    <td className="px-6 py-4 text-sm text-gray-500">{perm.createdDate}</td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex items-center justify-end gap-1">
+                         <button className="p-2 text-gray-400 hover:text-primary-600 transition-colors"><Edit className="w-4 h-4" /></button>
+                         <button className="p-2 text-gray-400 hover:text-red-500 transition-colors"><Trash2 className="w-4 h-4" /></button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

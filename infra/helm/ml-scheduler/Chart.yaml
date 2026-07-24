@@ -9,12 +9,12 @@ keywords:
   - machine-learning
   - task-management
   - fog-computing
-home: https://github.com/your-org/ml-task-scheduler
+home: https://github.com/shri33/ML-Task-Scheduler
 sources:
-  - https://github.com/your-org/ml-task-scheduler
+  - https://github.com/shri33/ML-Task-Scheduler
 maintainers:
-  - name: Your Name
-    email: your@email.com
+  - name: Shri Srivastava
+    email: shri@example.com
 dependencies:
   - name: redis
     version: "18.x.x"
