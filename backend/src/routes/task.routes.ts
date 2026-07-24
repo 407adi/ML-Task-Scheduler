@@ -2,7 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { taskService } from '../services/task.service';
 import { createTaskSchema, updateTaskSchema } from '../validators/task.validator';
 import { AppError } from '../middleware/errorHandler';
-import { authenticate, authorize, adminOnly, AuthRequest } from '../middleware/auth.middleware';
+import { authenticate, AuthRequest } from '../middleware/auth.middleware';
 import { getSchedulingQueue } from '../queues';
 import { JOB_NAMES, TaskEventJobData } from '../queues/types';
 import logger from '../lib/logger';

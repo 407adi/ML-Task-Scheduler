@@ -1,14 +1,16 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { chaosService, FailureType } from '../services/chaos.service';
-import { authenticate, adminOnly } from '../middleware/auth.middleware';
+import { authenticate } from '../middleware/auth.middleware';
+import { authorize } from './authorize.middleware';
 import { validateRequest } from '../middleware/validate';
 import { startChaosSchema, stopChaosSchema } from '../validators/chaos.validator';
 import { successResponse } from '../lib/http/response';
+import { UserRole } from '@prisma/client';
 
 const router = Router();
 
 // Chaos management is restricted to admins
-router.use(authenticate, adminOnly);
+router.use(authenticate, authorize([UserRole.ADMIN]));
 
 /**
  * @swagger

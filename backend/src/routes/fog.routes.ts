@@ -15,11 +15,13 @@ import {
   TerminalDevice,
 } from '../services/fogComputing.service';
 import { cuOptService } from '../services/cuopt.service';
-import { authenticate, adminOnly, AuthRequest } from '../middleware/auth.middleware';
+import { authenticate, AuthRequest } from '../middleware/auth.middleware';
+import { authorize } from './authorize.middleware';
 import prisma from '../lib/prisma';
 import logger from '../lib/logger';
 import { runSchedulingInWorker } from '../lib/fogWorker';
 import { z } from 'zod';
+import { UserRole } from '@prisma/client';
 
 const router = Router();
 
@@ -148,7 +150,7 @@ router.get('/nodes', async (req: Request, res: Response) => {
  * @route POST /api/fog/nodes
  * @desc Add a new fog node
  */
-router.post('/nodes', async (req: Request, res: Response) => {
+router.post('/nodes', authorize([UserRole.ADMIN]), async (req: Request, res: Response) => {
   const parsed = fogNodeSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ success: false, error: parsed.error.flatten().fieldErrors });
@@ -189,7 +191,7 @@ router.get('/devices', async (req: Request, res: Response) => {
  * @route POST /api/fog/devices
  * @desc Add a new terminal device
  */
-router.post('/devices', (req: Request, res: Response) => {
+router.post('/devices', authorize([UserRole.ADMIN]), (req: Request, res: Response) => {
   const parsed = fogDeviceSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ success: false, error: parsed.error.flatten().fieldErrors });
@@ -445,41 +447,37 @@ router.post('/compare', async (req: Request, res: Response) => {
     const testTasks = generateSampleTasks(taskCount, testDevices);
     const testFogNodes = generateSampleFogNodes(10);
     
+    const workerPayload = {
+      tasks: testTasks,
+      fogNodes: testFogNodes,
+      devices: testDevices,
+    };
+
     const startTime = Date.now();
     
-    // Run HH
-    const hhStart = Date.now();
-    const hhScheduler = new HybridHeuristicScheduler(testTasks, testFogNodes, testDevices);
-    const hh = hhScheduler.schedule();
-    const hhTime = Date.now() - hhStart;
-    
-    // Run IPSO
-    const ipsoStart = Date.now();
-    const ipso = ipsoOnlySchedule(testTasks, testFogNodes, testDevices);
-    const ipsoTime = Date.now() - ipsoStart;
-    
-    // Run IACO
-    const iacoStart = Date.now();
-    const iaco = iacoOnlySchedule(testTasks, testFogNodes, testDevices);
-    const iacoTime = Date.now() - iacoStart;
-    
-    // Run FCFS
-    const fcfsStart = Date.now();
-    const fcfs = fcfsSchedule(testTasks, testFogNodes, testDevices);
-    const fcfsTime = Date.now() - fcfsStart;
-    
-    // Run RR
-    const rrStart = Date.now();
-    const rr = roundRobinSchedule(testTasks, testFogNodes, testDevices);
-    const rrTime = Date.now() - rrStart;
-    
-    // Run Min-Min
-    const mmStart = Date.now();
-    const minMin = minMinSchedule(testTasks, testFogNodes, testDevices);
-    const mmTime = Date.now() - mmStart;
+    // Run algorithms in parallel using worker threads
+    const [hh, ipso, iaco, fcfs, rr, minMin] = await Promise.all([
+      runSchedulingInWorker({ ...workerPayload, algorithm: 'hh' }),
+      runSchedulingInWorker({ ...workerPayload, algorithm: 'ipso' }),
+      runSchedulingInWorker({ ...workerPayload, algorithm: 'iaco' }),
+      runSchedulingInWorker({ ...workerPayload, algorithm: 'fcfs' }),
+      runSchedulingInWorker({ ...workerPayload, algorithm: 'rr' }),
+      runSchedulingInWorker({ ...workerPayload, algorithm: 'min-min' }),
+    ]);
     
     const totalTime = Date.now() - startTime;
     
+    // Execution times are now part of the worker result, but we can estimate total time
+    // Note: individual execution times from workers are more accurate.
+    // For simplicity in this refactor, we'll use the total time divided by algo count.
+    const estimatedTimePerAlgo = Math.round(totalTime / 6);
+    const hhTime = hh.executionTimeMs || estimatedTimePerAlgo;
+    const ipsoTime = ipso.executionTimeMs || estimatedTimePerAlgo;
+    const iacoTime = iaco.executionTimeMs || estimatedTimePerAlgo;
+    const fcfsTime = fcfs.executionTimeMs || estimatedTimePerAlgo;
+    const rrTime = rr.executionTimeMs || estimatedTimePerAlgo;
+    const mmTime = minMin.executionTimeMs || estimatedTimePerAlgo;
+
     // Calculate improvements
     const hhVsRrDelay = ((rr.totalDelay - hh.totalDelay) / rr.totalDelay * 100).toFixed(2);
     const hhVsRrEnergy = ((rr.totalEnergy - hh.totalEnergy) / rr.totalEnergy * 100).toFixed(2);
@@ -595,14 +593,15 @@ router.get('/metrics', async (req: Request, res: Response) => {
       const testTasks = generateSampleTasks(count, testDevices);
       const testFogNodes = generateSampleFogNodes(10);
       
-      // Run all algorithms
-      const hhScheduler = new HybridHeuristicScheduler(testTasks, testFogNodes, testDevices);
-      const hh = hhScheduler.schedule();
-      const ipso = ipsoOnlySchedule(testTasks, testFogNodes, testDevices);
-      const iaco = iacoOnlySchedule(testTasks, testFogNodes, testDevices);
-      const fcfs = fcfsSchedule(testTasks, testFogNodes, testDevices);
-      const rr = roundRobinSchedule(testTasks, testFogNodes, testDevices);
-      const minMin = minMinSchedule(testTasks, testFogNodes, testDevices);
+      const workerPayload = { tasks: testTasks, fogNodes: testFogNodes, devices: testDevices };
+      const [hh, ipso, iaco, fcfs, rr, minMin] = await Promise.all([
+        runSchedulingInWorker({ ...workerPayload, algorithm: 'hh' }),
+        runSchedulingInWorker({ ...workerPayload, algorithm: 'ipso' }),
+        runSchedulingInWorker({ ...workerPayload, algorithm: 'iaco' }),
+        runSchedulingInWorker({ ...workerPayload, algorithm: 'fcfs' }),
+        runSchedulingInWorker({ ...workerPayload, algorithm: 'rr' }),
+        runSchedulingInWorker({ ...workerPayload, algorithm: 'min-min' }),
+      ]);
       
       metrics.push({
         taskCount: count,
@@ -681,7 +680,7 @@ const resetSchema = z.object({
  * @route POST /api/fog/reset
  * @desc Reset fog computing simulation data
  */
-router.post('/reset', adminOnly, async (req: Request, res: Response) => {
+router.post('/reset', authorize([UserRole.ADMIN]), async (req: Request, res: Response) => {
   const validation = resetSchema.safeParse(req.body);
   if (!validation.success) {
     return res.status(400).json({
@@ -745,13 +744,15 @@ router.get('/export/csv', async (req: Request, res: Response) => {
       const testTasks = generateSampleTasks(count, testDevices);
       const testFogNodes = generateSampleFogNodes(10);
       
-      const hhScheduler = new HybridHeuristicScheduler(testTasks, testFogNodes, testDevices);
-      const hh = hhScheduler.schedule();
-      const ipso = ipsoOnlySchedule(testTasks, testFogNodes, testDevices);
-      const iaco = iacoOnlySchedule(testTasks, testFogNodes, testDevices);
-      const fcfs = fcfsSchedule(testTasks, testFogNodes, testDevices);
-      const rr = roundRobinSchedule(testTasks, testFogNodes, testDevices);
-      const minMin = minMinSchedule(testTasks, testFogNodes, testDevices);
+      const workerPayload = { tasks: testTasks, fogNodes: testFogNodes, devices: testDevices };
+      const [hh, ipso, iaco, fcfs, rr, minMin] = await Promise.all([
+        runSchedulingInWorker({ ...workerPayload, algorithm: 'hh' }),
+        runSchedulingInWorker({ ...workerPayload, algorithm: 'ipso' }),
+        runSchedulingInWorker({ ...workerPayload, algorithm: 'iaco' }),
+        runSchedulingInWorker({ ...workerPayload, algorithm: 'fcfs' }),
+        runSchedulingInWorker({ ...workerPayload, algorithm: 'rr' }),
+        runSchedulingInWorker({ ...workerPayload, algorithm: 'min-min' }),
+      ]);
       
       results.push({ count, hh, ipso, iaco, fcfs, rr, minMin });
     }
@@ -809,12 +810,14 @@ router.get('/export/json', async (req: Request, res: Response) => {
       const testTasks = generateSampleTasks(count, testDevices);
       const testFogNodes = generateSampleFogNodes(10);
       
-      const hhScheduler = new HybridHeuristicScheduler(testTasks, testFogNodes, testDevices);
-      const hh = hhScheduler.schedule();
-      const ipso = ipsoOnlySchedule(testTasks, testFogNodes, testDevices);
-      const iaco = iacoOnlySchedule(testTasks, testFogNodes, testDevices);
-      const rr = roundRobinSchedule(testTasks, testFogNodes, testDevices);
-      const minMin = minMinSchedule(testTasks, testFogNodes, testDevices);
+      const workerPayload = { tasks: testTasks, fogNodes: testFogNodes, devices: testDevices };
+      const [hh, ipso, iaco, rr, minMin] = await Promise.all([
+        runSchedulingInWorker({ ...workerPayload, algorithm: 'hh' }),
+        runSchedulingInWorker({ ...workerPayload, algorithm: 'ipso' }),
+        runSchedulingInWorker({ ...workerPayload, algorithm: 'iaco' }),
+        runSchedulingInWorker({ ...workerPayload, algorithm: 'rr' }),
+        runSchedulingInWorker({ ...workerPayload, algorithm: 'min-min' }),
+      ]);
       
       taskCountResults.push({
         taskCount: count,
@@ -837,11 +840,13 @@ router.get('/export/json', async (req: Request, res: Response) => {
         maxToleranceTime: maxTime
       }));
       
-      const hhScheduler = new HybridHeuristicScheduler(testTasks, baseFogNodes, baseDevices);
-      const hh = hhScheduler.schedule();
-      const ipso = ipsoOnlySchedule(testTasks, baseFogNodes, baseDevices);
-      const iaco = iacoOnlySchedule(testTasks, baseFogNodes, baseDevices);
-      const rr = roundRobinSchedule(testTasks, baseFogNodes, baseDevices);
+      const workerPayload = { tasks: testTasks, fogNodes: baseFogNodes, devices: baseDevices };
+      const [hh, ipso, iaco, rr] = await Promise.all([
+        runSchedulingInWorker({ ...workerPayload, algorithm: 'hh' }),
+        runSchedulingInWorker({ ...workerPayload, algorithm: 'ipso' }),
+        runSchedulingInWorker({ ...workerPayload, algorithm: 'iaco' }),
+        runSchedulingInWorker({ ...workerPayload, algorithm: 'rr' }),
+      ]);
       
       toleranceResults.push({
         maxToleranceTime: maxTime,
@@ -902,12 +907,13 @@ router.get('/tolerance-reliability', async (req: Request, res: Response) => {
       }));
       const testFogNodes = generateSampleFogNodes(10);
       
-      // Run all algorithms
-      const hhScheduler = new HybridHeuristicScheduler(testTasks, testFogNodes, testDevices);
-      const hh = hhScheduler.schedule();
-      const ipso = ipsoOnlySchedule(testTasks, testFogNodes, testDevices);
-      const iaco = iacoOnlySchedule(testTasks, testFogNodes, testDevices);
-      const rr = roundRobinSchedule(testTasks, testFogNodes, testDevices);
+      const workerPayload = { tasks: testTasks, fogNodes: testFogNodes, devices: testDevices };
+      const [hh, ipso, iaco, rr] = await Promise.all([
+        runSchedulingInWorker({ ...workerPayload, algorithm: 'hh' }),
+        runSchedulingInWorker({ ...workerPayload, algorithm: 'ipso' }),
+        runSchedulingInWorker({ ...workerPayload, algorithm: 'iaco' }),
+        runSchedulingInWorker({ ...workerPayload, algorithm: 'rr' }),
+      ]);
       
       metrics.push({
         maxToleranceTime: maxTime,
@@ -941,51 +947,6 @@ router.get('/tolerance-reliability', async (req: Request, res: Response) => {
       success: false,
       error: 'Failed to generate tolerance-reliability metrics'
     });
-  }
-});
-
-/**
- * @route POST /api/fog/tasks/bulk
- * @desc Add multiple tasks at once (used by AI Scenario Generator)
- */
-router.post('/tasks/bulk', async (req: Request, res: Response) => {
-  try {
-    const { tasks } = req.body;
-    if (!Array.isArray(tasks)) {
-      return res.status(400).json({ success: false, error: 'Tasks must be an array' });
-    }
-
-    await initializeSampleData();
-    
-    const createdTasks = [];
-    for (const taskData of tasks) {
-      const newTask: Task = {
-        id: `ai-task-${Math.random().toString(36).substr(2, 9)}`,
-        name: taskData.name || 'AI Generated Task',
-        dataSize: taskData.dataSize || 50,
-        computationIntensity: taskData.computationIntensity || 15,
-        maxToleranceTime: taskData.maxToleranceTime || 10,
-        priority: taskData.priority || 3,
-        terminalDeviceId: taskData.terminalDeviceId || (terminalDevices.length > 0 ? terminalDevices[0].id : 'd1'),
-        expectedCompletionTime: taskData.expectedCompletionTime || 5,
-        memoryRequirement: taskData.memoryRequirement || 0,
-        vramRequirement: taskData.vramRequirement || 0,
-        startupOverhead: taskData.startupOverhead || 0.1,
-      };
-      fogTasks.push(newTask);
-      createdTasks.push(newTask);
-    }
-
-    res.json({
-      success: true,
-      data: {
-        count: createdTasks.length,
-        tasks: createdTasks
-      }
-    });
-  } catch (error) {
-    logger.error('Bulk task creation error:', error);
-    res.status(500).json({ success: false, error: 'Failed to create bulk tasks' });
   }
 });
 

@@ -2,8 +2,10 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { resourceService } from '../services/resource.service';
 import { createResourceSchema, updateResourceSchema } from '../validators/resource.validator';
 import { AppError } from '../middleware/errorHandler';
-import { authenticate, authorize, adminOnly, AuthRequest } from '../middleware/auth.middleware';
+import { authenticate, AuthRequest } from '../middleware/auth.middleware';
+import { authorize } from './authorize.middleware';
 import { z } from 'zod';
+import { UserRole } from '@prisma/client';
 import { validateUUID, sanitizeBody } from '../middleware/validate.middleware';
 
 type ResourceStatus = 'AVAILABLE' | 'BUSY' | 'OFFLINE';
@@ -62,7 +64,7 @@ router.get('/:id', validateUUID('id'), async (req: Request, res: Response, next:
 });
 
 // POST /api/resources - Create new resource
-router.post('/', async (req: Request, res: Response, next: NextFunction) => {
+router.post('/', authorize([UserRole.ADMIN]), async (req: Request, res: Response, next: NextFunction) => {
   try {
     const data = createResourceSchema.parse(req.body);
     const resource = await resourceService.create(data);
@@ -78,7 +80,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
 });
 
 // PUT /api/resources/:id - Update resource
-router.put('/:id', validateUUID('id'), async (req: Request, res: Response, next: NextFunction) => {
+router.put('/:id', validateUUID('id'), authorize([UserRole.ADMIN]), async (req: Request, res: Response, next: NextFunction) => {
   try {
     const data = updateResourceSchema.parse(req.body);
     const resource = await resourceService.update(req.params.id, data);
@@ -94,7 +96,7 @@ router.put('/:id', validateUUID('id'), async (req: Request, res: Response, next:
 });
 
 // DELETE /api/resources/:id - Delete resource
-router.delete('/:id', validateUUID('id'), async (req: Request, res: Response, next: NextFunction) => {
+router.delete('/:id', validateUUID('id'), authorize([UserRole.ADMIN]), async (req: Request, res: Response, next: NextFunction) => {
   try {
     await resourceService.delete(req.params.id);
     
