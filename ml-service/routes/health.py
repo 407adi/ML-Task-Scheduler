@@ -10,7 +10,7 @@ def health_check():
     is_ready = predictor.is_loaded()
     
     return jsonify({
-        'status': 'ok' if is_ready else 'loading',
+        'status': 'healthy' if is_ready else 'loading',
         'service': 'ml-prediction-service',
         'model_loaded': is_ready,
         'model_version': predictor.get_version()
