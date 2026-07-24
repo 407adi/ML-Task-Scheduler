@@ -32,6 +32,10 @@ jobs:
         working-directory: backend
         run: npm ci --legacy-peer-deps
 
+      - name: Generate Prisma client
+        working-directory: backend
+        run: npx prisma generate
+
       - name: Backend type check
         working-directory: backend
         run: npx tsc --noEmit
