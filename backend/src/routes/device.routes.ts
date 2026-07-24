@@ -161,7 +161,7 @@ router.post('/', authenticate, authorize([UserRole.ADMIN]), async (req: AuthRequ
     }
 
     const device = await prisma.device.create({
-      data: validation.data
+      data: validation.data as any
     });
 
     // Log device creation
