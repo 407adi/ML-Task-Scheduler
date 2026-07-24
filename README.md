@@ -1,7 +1,7 @@
 # Intelligent Task Allocation and Scheduling System
 ## ML-Assisted Fog Computing Optimization
 
-A production-grade full-stack web application implementing intelligent task scheduling across a 3-layer fog computing architecture, with machine learning predictions and 6 bio-inspired optimization algorithms based on Wang & Li (2019).
+A full-stack, production-oriented web application implementing intelligent task scheduling across a 3-layer fog computing architecture, with machine learning predictions and bio-inspired optimization algorithms based on Wang & Li (2019).
 
 **Team Byte_hogs** | BITS Pilani Online BSc CS Study Project
 
@@ -21,140 +21,148 @@ A production-grade full-stack web application implementing intelligent task sche
                     │            │            │
              ┌──────▼──────┐ ┌──▼───┐  ┌─────▼─────┐
              │ PostgreSQL  │ │Redis │  │  BullMQ   │
-             │   16 tables │ │Cache │  │  Queues   │
+             │   30 models │ │Cache │  │  Queues   │
              │  Port 5432  │ │ 6379 │  └───────────┘
              └─────────────┘ └──────┘
 ```
 
-### Docker Services (5 containers)
-| Service | Image | Port | Health |
-|---------|-------|------|--------|
-| Frontend | React + nginx | 3000 | Healthcheck |
-| Backend | Node.js 20 Alpine | 3001 | Healthcheck |
-| ML Service | Python 3.11 + gunicorn | 5001 | Healthcheck |
-| PostgreSQL | postgres:15 | 5432 | Healthcheck |
-| Redis | redis:7 | 6379 | Healthcheck |
+### System Services
+| Service | Technology | Port | Purpose |
+|---------|------------|------|---------|
+| **Frontend** | React 18 + Vite + TailwindCSS | 3000 | Operational dashboard (26 pages, 24 components) |
+| **Backend** | Node.js 20 + Express + TypeScript | 3001 | API server (19 route modules), 4 BullMQ workers |
+| **ML Service** | Python 3.11 + Flask + PyTorch | 5001 | Execution time prediction, MaskablePPO RL, SHAP |
+| **PostgreSQL** | Postgres 15 Alpine | 5432 | Primary database (30 Prisma models) |
+| **Redis** | Redis 7 Alpine | 6379 | Caching, distributed locks, pub/sub, queue store |
+| **Prometheus** | Prometheus | 9090 | Telemetry scraper |
+| **Grafana** | Grafana | 3002 | Operational metrics dashboard |
+
+---
+
+## 🏛️ Architectural Role Separation
+
+The platform establishes a clear separation of concerns between core scheduling execution and ML intelligence:
+
+- **Backend Service (Node.js / TypeScript)**:
+  - Houses the primary scheduling engine and 10 algorithm implementations: **IPSO**, **IACO**, **Hybrid Heuristic (HH)**, **FCFS**, **Round-Robin**, **Min-Min**, **EDF**, **SJF**, **ML-Enhanced**, and **RL-PPO**.
+  - Implements the 3-layer fog offloading math model, SLA violation bounds, and energy equations.
+  - Manages database persistence, background BullMQ queues, and WebSocket events.
+
+- **ML Service (Python / Flask)**:
+  - Provides execution time duration predictions using **XGBoost**, **RandomForest**, and **GradientBoosting** ($R^2 = 0.9483$).
+  - Implements **MaskablePPO** Deep Reinforcement Learning with dynamic dot-product attention pooling for task matrices.
+  - Generates **SHAP** feature attributions and **Split Conformal Prediction** intervals ($\alpha=0.1$).
+
+---
 
 ## 📁 Project Structure
 
 ```
-PROJECT/                       # 16,000+ lines of source code
-├── backend/                   # TypeScript + Express API (8,000+ lines)
+PROJECT/                       # Full-stack implementation
+├── backend/                   # TypeScript + Express API (146 files)
 │   ├── src/
-│   │   ├── routes/            # 8 route controllers, 53+ endpoints
-│   │   ├── services/          # fogComputing (1,158L), scheduler, ML
-│   │   ├── validators/        # Zod schema validation
-│   │   ├── middleware/        # Auth, CSRF, rate limiting, errors
-│   │   ├── workers/           # BullMQ background workers
-│   │   ├── queues/            # Job queue definitions
-│   │   ├── lib/               # Logger, Redis, Prisma, Swagger, CircuitBreaker
-│   │   └── __tests__/         # 5 test suites, 103 tests
+│   │   ├── routes/            # 19 route modules (70+ REST endpoints)
+│   │   ├── services/          # fogComputing (1,379L), scheduler, ml, errorRecovery
+│   │   ├── middleware/        # Auth, CSRF, rate limiting, error handlers
+│   │   ├── workers/           # 4 BullMQ background processors
+│   │   ├── queues/            # Prediction, scheduling, notification job queues
+│   │   ├── lib/               # Logger, Redis, Prisma, Swagger, RedisLock
+│   │   └── __tests__/         # 6 Jest test suites (~1,880 lines of tests)
 │   └── prisma/
-│       ├── schema.prisma      # 16 models, 6 enums
-│       └── seed.ts            # Database seeding
+│       ├── schema.prisma      # 30 database models
+│       └── seed.ts            # Idempotent database seeding
 │
-├── frontend/                  # React 18 + TypeScript (5,000+ lines)
+├── frontend/                  # React 18 + Vite + TypeScript (77 files)
 │   └── src/
-│       ├── pages/             # 10 full pages (Dashboard, Tasks, Fog, etc.)
-│       ├── components/        # 10 reusable components
+│       ├── pages/             # 26 pages (Dashboard, Fog, Tasks, Experiments, etc.)
+│       ├── components/        # 24 reusable UI components
 │       ├── store/             # Zustand state management
-│       ├── contexts/          # Toast, Auth contexts
-│       ├── hooks/             # Custom hooks
-│       ├── lib/               # Axios client + interceptors
-│       └── test/              # 6 test suites, 48 tests
+│       ├── contexts/          # Auth, Socket, Theme, Toast contexts
+│       ├── hooks/             # Custom React hooks
+│       └── lib/               # Axios client with CSRF & 401 refresh interceptors
 │
-├── ml-service/                # Python 3.11 + Flask (1,857 lines)
-│   ├── app.py                 # Flask REST API (646L), 10+ endpoints
-│   ├── model.py               # TaskPredictor: RF, XGBoost, GB (286L)
-│   ├── research.py            # SHAP, Optuna, Conformal Prediction (286L)
-│   ├── train.py               # Training pipeline (245L)
-│   └── tests/                 # ML service tests
+├── ml-service/                # Python 3.11 + Flask (38 files)
+│   ├── app_factory.py         # Flask application factory with OpenTelemetry
+│   ├── model.py               # XGBoost, RandomForest, GradientBoosting models
+│   ├── train_rl.py            # MaskablePPO Deep RL with attention pooling
+│   ├── research.py            # SHAP, Optuna TPE, Conformal Prediction
+│   ├── routes/                # 5 Flask blueprints (predict, train, admin, sim, health)
+│   ├── environments/          # Gym fog scheduling environments
+│   └── evaluation/            # Benchmarks, NDCG, Student's t-test, Cohen's d
 │
-├── infra/                     # Platform engineering
-│   ├── k8s/                   # Kubernetes manifests
-│   ├── helm/                  # Helm charts
-│   ├── terraform/             # Infrastructure as Code
-│   ├── istio/                 # Service mesh
-│   ├── grafana/               # Dashboard configs
-│   ├── prometheus/            # Metrics collection
-│   ├── argocd/                # GitOps deployment
-│   └── chaos-mesh/            # Chaos engineering
+├── infra/                     # Cloud-native infrastructure templates (108 files)
+│   ├── examples/k8s/          # Kubernetes manifests (Deployments, HPA, Ingress)
+│   ├── helm/                  # Parameterized Helm charts (dev/staging/prod)
+│   ├── examples/terraform/    # AWS EKS, RDS, ElastiCache terraform code
+│   ├── examples/istio/        # VirtualServices, mTLS, rate limiting
+│   ├── grafana/               # Dashboards & SLO alerts
+│   ├── prometheus/            # Metric scraping configuration
+│   ├── examples/argocd/       # GitOps application manifests
+│   └── examples/chaos-mesh/   # Pod & network chaos experiments
 │
-├── docs/                      # 12 documentation files
+├── docs/                      # 21 documentation files
+│   ├── ARCHITECTURE.md
+│   ├── DEPLOYMENT.md
+│   ├── DEVELOPER_GUIDE.md
 │   ├── Phase1_Project_Proposal.md
 │   ├── Phase2_SRS_Document.md
-│   ├── Phase3_Design_Submission.md
-│   ├── DEVELOPER_GUIDE.md
-│   ├── USER_GUIDE.md
-│   └── ...
+│   └── Phase3_Design_Submission.md
 │
-└── docker-compose.yml         # 5-container orchestration
+└── docker-compose.yml         # Container orchestration specification
 ```
+
+---
 
 ## 🚀 Quick Start
 
 ### Option 1: Docker (Recommended)
 
-The easiest way to run the entire ecosystem is using the provided PowerShell helper script (for Windows) or standard Docker commands.
-
-**Windows:**
+**Windows (PowerShell):**
 ```powershell
 ./docker-run.ps1
 ```
 
-For Google sign-in in Docker, make sure `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set in your local `backend/.env` or root `.env`, and register `http://localhost:3001/api/v1/auth/google/callback` in Google Cloud Console.
-
-Google Cloud project details:
-- Project ID: `ml-task-schedule`
-- Project Number: `988268829955`
-- Cloud Hub: https://console.cloud.google.com/cloud-hub/home?project=ml-task-schedule
-- Project settings: https://console.cloud.google.com/home/dashboard?project=ml-task-schedule
-
 **Linux / Generic:**
 ```bash
-# Start all 7 services (DB, Redis, Backend, ML, Frontend, Prometheus, Grafana)
+# Start all containerized services
 docker compose up -d --build
 
-# Verify all healthy
-docker ps --format "table {{.Names}}\t{{.Status}}"
+# Verify container statuses
+docker compose ps
 
-# Seed database with users
+# Run Prisma database migrations and seed default data
 docker exec task-scheduler-backend npx prisma db seed
 ```
 
-### 📊 Observability Dashboards
+### Observability Dashboard Endpoints
 
-Access the research-grade telemetry pipeline:
+| Service | URL | Description |
+|---------|-----|-------------|
+| **Frontend UI** | [http://localhost:3000](http://localhost:3000) | Operational Dashboard |
+| **API Backend** | [http://localhost:3001/api/health](http://localhost:3001/api/health) | Express API Healthcheck |
+| **Swagger Docs** | [http://localhost:3001/api/docs](http://localhost:3001/api/docs) | OpenAPI Specification |
+| **ML Service** | [http://localhost:5001/api/health](http://localhost:5001/api/health) | ML Model Service Health |
+| **Prometheus** | [http://localhost:9090](http://localhost:9090) | Metrics Collection Engine |
+| **Grafana** | [http://localhost:3002](http://localhost:3002) | Telemetry & SLO Dashboards |
 
-| Service | URL | Note |
-|---------|-----|------|
-| **Frontend** | [http://localhost:3000](http://localhost:3000) | Main UI |
-| **API Health** | [http://localhost:3001/api/health](http://localhost:3001/api/health) | Backend Status |
-| **Prometheus** | [http://localhost:9090](http://localhost:9090) | Metrics Explorer |
-| **Grafana** | [http://localhost:3002](http://localhost:3002) | Dashboards (admin/admin) |
-| **ML Health** | [http://localhost:5001/api/health](http://localhost:5001/api/health) | ML Model Status |
+### Default Credentials
+| Email | Password | Role |
+|-------|----------|------|
+| `admin@example.com` | `password123` | ADMIN |
+| `demo@example.com` | `password123` | USER |
+| `viewer@example.com` | `password123` | VIEWER |
 
 ---
 
-### Default Users
-| Email | Password | Role |
-|-------|----------|------|
-| admin@example.com | password123 | ADMIN |
-| demo@example.com | password123 | USER |
-| viewer@example.com | password123 | VIEWER |
+## Option 2: Manual Local Setup
 
-### Option 2: Manual Setup
-
-#### 1. Database (PostgreSQL)
+### 1. PostgreSQL Database & Redis
 ```bash
-docker run -d --name postgres -p 5432:5432 \
-  -e POSTGRES_USER=postgres \
-  -e POSTGRES_PASSWORD=password \
-  -e POSTGRES_DB=task_scheduler \
-  postgres:15-alpine
+docker run -d --name postgres -p 5432:5432 -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=password -e POSTGRES_DB=task_scheduler postgres:15-alpine
+docker run -d --name redis -p 6379:6379 redis:7-alpine
 ```
 
-#### 2. Backend
+### 2. Backend Service
 ```bash
 cd backend
 npm install
@@ -164,7 +172,7 @@ npm run db:seed
 npm run dev
 ```
 
-#### 3. ML Service
+### 3. ML Service
 ```bash
 cd ml-service
 python -m venv venv
@@ -173,407 +181,114 @@ pip install -r requirements.txt
 python app.py
 ```
 
-#### 4. Frontend
+### 4. Frontend Application
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
 
-## 🔧 API Endpoints (53+ Routes)
+---
 
-### Authentication (9 endpoints)
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/v1/auth/register` | Register new user |
-| POST | `/api/v1/auth/login` | Login (returns JWT httpOnly cookie) |
-| POST | `/api/v1/auth/refresh` | Refresh token |
-| POST | `/api/v1/auth/logout` | Logout |
-| GET | `/api/v1/auth/me` | Get current user |
-| PUT | `/api/v1/auth/profile` | Update profile |
-| POST | `/api/v1/auth/forgot-password` | Forgot password |
-| POST | `/api/v1/auth/reset-password` | Reset password |
-| POST | `/api/v1/auth/change-password` | Change password |
+## 🔧 Core API Routes (19 Route Modules)
 
-### Tasks (7 endpoints)
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/v1/tasks` | List tasks (filterable) |
-| POST | `/api/v1/tasks` | Create task |
-| GET | `/api/v1/tasks/stats` | Task statistics |
-| GET | `/api/v1/tasks/:id` | Get task by ID |
-| PUT | `/api/v1/tasks/:id` | Update task |
-| DELETE | `/api/v1/tasks/:id` | Soft-delete task |
-| POST | `/api/v1/tasks/:id/complete` | Complete task |
+| Module | Route Prefix | Key Functionality |
+| :--- | :--- | :--- |
+| **Auth** | `/api/v1/auth` | Login, Register, Google OAuth, Refresh Token, Profile, Password Reset |
+| **Fog** | `/api/v1/fog` | Fog node CRUD, schedule execution, algorithm comparison, metrics export |
+| **Tasks** | `/api/v1/tasks` | Task CRUD, bulk creation, task completion, comment threads |
+| **Devices** | `/api/v1/devices` | IoT device registration, telemetry heartbeat, logs, metrics |
+| **Experiments**| `/api/v1/experiments`| Paper reproduction benchmarks (Figures 5-8), CSV export, summary reports |
+| **Simulation** | `/api/v1/simulation` | Dynamic topology graph, congestion heatmaps, simulation runs |
+| **Schedule** | `/api/v1/schedule` | Schedule trigger, algorithm registry, ML status, history |
+| **Reports** | `/api/v1/reports` | PDFKit PDF generation (Completion, Energy, Reliability), CSV downloads |
+| **Metrics** | `/api/v1/metrics` | Real-time system telemetry, metrics timeline, anomaly analysis |
+| **ML** | `/api/v1/ml` | Model registry listing, auto-retrain configuration, retrain triggers |
+| **AI** | `/api/v1/ai` | NVIDIA NIM Llama 3.1 assistant chat, scenario generation |
+| **Resources** | `/api/v1/resources` | Compute resource node CRUD, load capacity management |
+| **Chaos** | `/api/v1/chaos` | Network latency, error injection, pod outage fault testing |
+| **Chat** | `/api/v1/chat` | Real-time WebSocket chat channels and direct messaging |
+| **Mail** | `/api/v1/mail` | Internal messaging system (inbox, sent, compose) |
+| **Calendar** | `/api/v1/calendar` | Interactive calendar events projecting task due dates |
+| **User** | `/api/v1/user` | User settings, admin management CRUD, notifications |
+| **GPU** | `/api/v1/gpu` | GPU node telemetry registration and status monitoring |
 
-### Resources (6 endpoints)
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/v1/resources` | List resources |
-| POST | `/api/v1/resources` | Create resource |
-| GET | `/api/v1/resources/stats` | Resource statistics |
-| GET | `/api/v1/resources/:id` | Get resource |
-| PUT | `/api/v1/resources/:id` | Update resource |
-| DELETE | `/api/v1/resources/:id` | Delete resource |
+---
 
-### Fog Computing (12 endpoints)
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/v1/fog/info` | System info (algorithms, nodes, devices) |
-| GET | `/api/v1/fog/nodes` | List fog nodes |
-| GET | `/api/v1/fog/devices` | List terminal devices |
-| GET | `/api/v1/fog/tasks` | List fog tasks |
-| POST | `/api/v1/fog/schedule` | Schedule with single algorithm |
-| POST | `/api/v1/fog/compare` | Compare all 6 algorithms |
-| GET | `/api/v1/fog/metrics` | Performance metrics |
-| POST | `/api/v1/fog/reset` | Reset fog environment |
-| GET | `/api/v1/fog/export` | Export results |
-| GET | `/api/v1/fog/tolerance` | Fault tolerance analysis |
+## 🧠 Scheduling Algorithms (10 Implemented)
 
-### Devices (10 endpoints)
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/v1/devices` | List devices |
-| POST | `/api/v1/devices` | Register device |
-| GET | `/api/v1/devices/stats` | Device statistics |
-| GET | `/api/v1/devices/overview` | Device overview |
-| GET | `/api/v1/devices/:id` | Get device |
-| PUT | `/api/v1/devices/:id` | Update device |
-| DELETE | `/api/v1/devices/:id` | Remove device |
-| POST | `/api/v1/devices/:id/heartbeat` | Device heartbeat |
-| GET | `/api/v1/devices/:id/metrics` | Device metrics |
-| GET | `/api/v1/devices/:id/logs` | Device logs |
-
-### Scheduling (4 endpoints)
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/v1/schedule` | Run ML-assisted scheduler |
-| GET | `/api/v1/schedule/history` | Schedule history |
-| GET | `/api/v1/schedule/comparison` | ML vs heuristic comparison |
-| GET | `/api/v1/schedule/ml-status` | ML service status |
-
-### Reports (7 endpoints)
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/v1/reports` | List reports |
-| GET | `/api/v1/reports/completion-time/pdf` | Completion time PDF |
-| GET | `/api/v1/reports/energy-consumption/pdf` | Energy consumption PDF |
-| GET | `/api/v1/reports/reliability/pdf` | Reliability PDF |
-| GET | `/api/v1/reports/completion-time/csv` | Completion time CSV |
-| GET | `/api/v1/reports/energy-consumption/csv` | Energy consumption CSV |
-| GET | `/api/v1/reports/reliability/csv` | Reliability CSV |
-
-### Metrics (2 endpoints)
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/v1/metrics` | Dashboard metrics |
-| GET | `/api/v1/metrics/timeline` | Metrics timeline |
-
-### Experiments (3 endpoints)
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/v1/experiments/run` | Run experiment |
-| GET | `/api/v1/experiments/results` | List saved results |
-| GET | `/api/v1/experiments/summary` | Get summary report |
-
-### ML Service Direct (10+ endpoints)
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/health` | ML service health |
-| POST | `/api/predict` | Predict execution time |
-| POST | `/api/predict/batch` | Batch predictions |
-| POST | `/api/train` | Train model |
-| POST | `/api/retrain` | Retrain with new data |
-| GET | `/api/model/info` | Model info (3 algorithms) |
-| POST | `/api/model/switch` | Switch active model |
-| POST | `/api/model/compare` | Compare model performance |
-| POST | `/api/explain` | SHAP explanations |
-| POST | `/api/tune` | Optuna hyperparameter tuning |
-
-## 🧠 Scheduling Algorithms (6 Implemented)
-
-All based on Wang & Li (2019) "Task Scheduling Based on a Hybrid Heuristic Algorithm for Smart Production Line with Fog Computing" — implemented in `fogComputing.service.ts` (1,158 lines).
+Based on Wang & Li (2019) *"Task Scheduling Based on a Hybrid Heuristic Algorithm for Smart Production Line with Fog Computing"* and ML enhancement models:
 
 ### Bio-Inspired Algorithms
-| Algorithm | Lines | Description |
-|-----------|-------|-------------|
-| **Hybrid Heuristic (HH)** | ~200L | Combines IPSO + IACO with adaptive switching |
-| **IPSO** | ~150L | Improved Particle Swarm Optimization with inertia weight |
-| **IACO** | ~150L | Improved Ant Colony Optimization with pheromone evaporation |
+- **Hybrid Heuristic (HH)**: Combines IPSO global search with IACO local refinement.
+- **IPSO**: Improved Particle Swarm Optimization with adaptive inertia weight.
+- **IACO**: Improved Ant Colony Optimization with pheromone evaporation rules.
 
-### Traditional Algorithms
-| Algorithm | Description |
-|-----------|-------------|
-| **FCFS** | First-Come-First-Served baseline |
-| **Round-Robin** | Cyclic resource distribution |
-| **Min-Min** | Assign shortest task to fastest resource |
+### Heuristic & Deterministic Baselines
+- **FCFS**: First-Come-First-Served baseline.
+- **Round-Robin**: Cyclic node allocation.
+- **Min-Min**: Assigns smallest task to fastest available compute resource.
+- **EDF**: Earliest Deadline First priority queueing.
+- **SJF**: Shortest Job First.
 
-### Live Algorithm Comparison Results
-```
-Algorithm     | Delay (ms)  | Energy (J) | Reliable Tasks
-──────────────|─────────────|────────────|───────────────
-Hybrid (HH)  | 1,933.85    | 13.28      | 28
-IPSO          | 1,765.08    | 12.33      | 34
-IACO          | 1,879.18    | 12.52      | 28
-FCFS          | 2,129.04    | 15.54      | 22
-Round-Robin   | 2,171.77    | 19.04      | 24
-Min-Min       | 2,208.10    | 14.42      | 32
+### Machine Learning & RL
+- **ML-Enhanced**: Regression model predicted duration + cost minimization objective.
+- **RL-PPO**: MaskablePPO policy model trained on 4-tier fog topology environments.
 
-Improvements: HH vs RR: 10.96% delay reduction, 30.25% energy reduction
-```
+---
 
-## 🤖 ML Models (3 Implemented)
+## 🗄️ Database Schema (30 Prisma Models)
 
-Implemented in `ml-service/model.py` using scikit-learn and XGBoost:
+- **Scheduling & Core**: `Task`, `Resource`, `ScheduleHistory`, `Prediction`, `SystemMetrics`
+- **Fog Network**: `FogNode`, `FogTaskAssignment`, `Device`, `DeviceLog`, `DeviceMetric`
+- **ML Operations**: `MlModel`, `TrainingJob`, `AutoRetrainConfig`
+- **User & Security**: `User`, `RefreshToken`, `AuditLog`, `NotificationPreference`, `UserBehaviorProfile`
+- **Collaboration**: `ChatRoom`, `ChatMember`, `ChatMessage`, `MessageAttachment`, `MailMessage`, `MailThread`, `MailThreadParticipant`, `MailRecipient`, `MailAttachment`, `TaskComment`, `TaskAttachment`, `TaskEvent`
 
-| Model | Library | Status |
-|-------|---------|--------|
-| **Random Forest** | scikit-learn | Active (default) |
-| **XGBoost** | xgboost | Available |
-| **Gradient Boosting** | scikit-learn | Available |
+---
 
-### Features & Capabilities
-- **Input**: taskSize, taskType, priority, resourceLoad, cpuIntensity, memoryRequirement, ioOperations, networkBandwidth
-- **Output**: predictedTime (seconds), confidence (0-1)
-- **Research Module**: SHAP explainability, Optuna hyperparameter tuning, Conformal prediction
-- **Live prediction**: `predictedTime=4.97s, confidence=0.8363`
+## 🔒 Security Architecture
 
-## 🗄️ Database Schema (16 Models)
+- **JWT Authentication**: Short-lived access tokens + single-use refresh token rotation.
+- **CSRF Defense**: Double-submit cookie pattern enforcing `X-CSRF-Token` headers.
+- **Password Protection**: `bcrypt` password hashing with salt rounds.
+- **RBAC**: Role-Based Access Control (`ADMIN`, `USER`, `VIEWER`).
+- **Input Sanitization**: Zod schema validation, UUID regex checks, XSS script tag stripping.
+- **Rate Limiting**: 6 independent rate limiters enforcing window limits per IP.
+- **Circuit Breakers**: Fault tolerance wrappers for database, Redis, ML service, and email.
 
-```
-Task, Resource, ScheduleHistory, Prediction, SystemMetrics,
-User, RefreshToken, NotificationPreference,
-MlModel, TrainingJob, AutoRetrainConfig,
-Device, DeviceLog, DeviceMetric,
-FogNode, FogTaskAssignment
+---
+
+## 📐 Reproducing Research Experiments (Figures 5–8)
+
+The project includes an experiment reproduction suite for Wang & Li (2019) Sections 5.2–5.3.
+
+### CLI Execution
+```bash
+# Execute experiment suite in backend container
+docker exec -it task-scheduler-backend npx ts-node src/scripts/run_experiments.ts --mode all --iterations 3
 ```
 
-**Enums**: TaskType (CPU/IO/MIXED/NETWORK), TaskSize (SMALL/MEDIUM/LARGE), TaskStatus (PENDING/SCHEDULED/RUNNING/COMPLETED/FAILED/CANCELLED), ResourceStatus, UserRole (ADMIN/USER/VIEWER), DeviceType, DeviceStatus, FogNodeStatus
+### Benchmark Summary Trends
 
-## 🔒 Security
+| Experiment | Metric | Expected Behavior |
+|------------|--------|-------------------|
+| **Fig 5** | Completion Time vs Tasks | HH maintains lowest latency; divergence increases beyond 100 tasks |
+| **Fig 6** | Energy vs Tasks | HH achieves lowest energy consumption; RR highest |
+| **Fig 7** | Reliability vs Tasks | Reliability declines as workload increases; HH maintains highest bound |
+| **Fig 8** | Reliability vs Tolerance | Reliability increases with deadline tolerance; HH achieves highest ratio |
 
-- **JWT Authentication**: httpOnly cookies with refresh token rotation
-- **CSRF Protection**: Double-submit cookie pattern
-- **Password Hashing**: bcrypt with salt rounds
-- **RBAC**: Role-based access control (ADMIN, USER, VIEWER)
-- **Rate Limiting**: Configurable per-endpoint limits
-- **Input Validation**: Zod schema validation on all inputs
-- **Circuit Breaker**: Fault tolerance for ML service calls
-
-## 🖥️ Frontend Pages (11 Implemented)
-
-| Page | Lines | Features |
-|------|-------|----------|
-| Fog Computing | 517 | Algorithm comparison, visualization, 3D charts |
-| Devices | 476 | Device management, heartbeat, metrics |
-| Analytics | 417 | Charts, performance dashboards |
-| Profile | 416 | User settings, preferences |
-| Tasks | 409 | CRUD, filtering, status management |
-| Login | 355 | JWT auth, form validation |
-| Experiments | 310 | Paper Figure 5-8 reproduction, interactive charts |
-| Dashboard | 276 | Stats cards, ML status, real-time data |
-| Resources | 268 | Resource CRUD, load monitoring |
-| Register | 236 | User registration, validation |
-| Not Found | 40 | 404 error page |
-
-## ✅ Test Results
-
-### Backend Tests (Jest)
-```
-Test Suites: 5 passed, 5 total
-Tests:       103 passed, 103 total
-Coverage:    Statements 22.95%, Lines 21.96%
-```
-
-| Suite | Tests | Description |
-|-------|-------|-------------|
-| fogComputing.service.test.ts | 48 | All 6 algorithms, edge cases, performance |
-| api.integration.test.ts | 19 | API contracts, CRUD operations |
-| ml.service.test.ts | 15 | ML integration, predictions, fallback |
-| auth.middleware.test.ts | 14 | JWT, CSRF, RBAC, token validation |
-| scheduler.service.test.ts | 7 | Scheduling logic, ML-assisted flow |
-
-### Frontend Tests (Vitest)
-```
-Test Files: 6 passed, 6 total
-Tests:      48 passed, 48 total
-```
-
-| Suite | Tests | Description |
-|-------|-------|-------------|
-| useKeyboardShortcuts.test.ts | 10 | Keyboard navigation |
-| store.test.ts | 10 | Zustand state management |
-| ToastContext.test.tsx | 9 | Toast notifications |
-| ErrorBoundary.test.tsx | 7 | Error handling |
-| NotFound.test.tsx | 7 | 404 page rendering |
-| Dashboard.test.tsx | 5 | Dashboard data loading, ML status |
-
-## 🏗️ Infrastructure
-
-- **Docker Compose**: 5 containers with health checks
-- **Kubernetes**: Full manifests (deployments, services, ingress, configmaps, secrets)
-- **Helm Charts**: Parameterized deployment charts
-- **Terraform**: Infrastructure as Code
-- **Istio**: Service mesh with canary releases, rate limiting, mTLS
-- **ArgoCD**: GitOps continuous deployment
-- **Prometheus + Grafana**: Monitoring and dashboards
-- **KEDA**: Event-driven autoscaling
-- **Chaos Mesh**: Chaos engineering experiments
-- **Blue-Green Deployments**: Zero-downtime releases via Argo Rollouts
-
-## 📊 Features
-
-- ✅ **Dashboard**: Real-time overview with stat cards, ML status indicator
-- ✅ **Task Management**: Full CRUD with filtering, sorting, pagination
-- ✅ **Resource Monitoring**: Load tracking, utilization metrics
-- ✅ **6 Scheduling Algorithms**: IPSO, IACO, HH, FCFS, RR, Min-Min
-- ✅ **3 ML Models**: Random Forest, XGBoost, Gradient Boosting
-- ✅ **Algorithm Comparison**: Side-by-side benchmark with improvement metrics
-- ✅ **SHAP Explanations**: ML model interpretability
-- ✅ **Analytics**: Performance charts, historical comparison
-- ✅ **PDF/CSV Reports**: 3 PDF + 3 CSV export endpoints
-- ✅ **Device Management**: IoT device registration, heartbeat, metrics
-- ✅ **Real-time Updates**: WebSocket (Socket.IO) notifications
-- ✅ **Dark Mode**: Full dark/light theme support
-- ✅ **JWT + CSRF Security**: Production-grade authentication
-- ✅ **RBAC**: Granular role-based access control
-- ✅ **Circuit Breaker**: Fault-tolerant ML service integration
-- ✅ **Swagger/OpenAPI**: Auto-generated API docs at `/api/docs`
+---
 
 ## 👥 Team
 
 | Name | Role | Student ID |
 |------|------|------------|
-| Shri Srivastava | Lead | 2023ebcs593 |
-| Ichha Dwivedi|         | 2023ebcs125 |
-| Aditi Singh |          | 2023ebcs498 |
+| Shri Srivastava | Team Lead & Developer | 2023ebcs593 |
+| Ichha Dwivedi | Developer | 2023ebcs125 |
+| Aditi Singh | Developer | 2023ebcs498 |
 
-## 📐 Reproducing Paper Experiments (Figures 5–8)
-
-This system implements a full experiment framework to reproduce the results from
-Wang & Li (2019) Sections 5.2–5.3. Three methods are available:
-
-### Method 1: CLI (Recommended)
-
-```bash
-# Inside the backend container:
-docker exec -it task-scheduler-backend sh
-
-# Run all experiments (Figures 5, 6, 7, 8)
-npx ts-node src/scripts/run_experiments.ts --mode all --iterations 3
-
-# Run individual experiments
-npx ts-node src/scripts/run_experiments.ts --mode energy               # Figure 6
-npx ts-node src/scripts/run_experiments.ts --mode reliability-tasks    # Figure 7
-npx ts-node src/scripts/run_experiments.ts --mode reliability-tolerance # Figure 8
-
-# Single simulation benchmark
-npx ts-node src/scripts/run_experiments.ts --mode simulate --tasks 200 --nodes 10 --algo HH
-```
-
-Results are saved under `results/` with CSV + JSON output.
-
-### Method 2: API
-
-```bash
-TOKEN=$(curl -s -X POST http://localhost:3001/api/v1/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"admin@example.com","password":"password123"}' | jq -r '.data.accessToken')
-
-# Run all experiments
-curl -X POST http://localhost:3001/api/v1/experiments/run \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"experiment_type":"all","iterations":3}'
-
-# Run specific experiment
-curl -X POST http://localhost:3001/api/v1/experiments/run \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"experiment_type":"energy"}'
-```
-
-### Method 3: Frontend UI
-
-1. Navigate to **http://localhost:3000/experiments**
-2. Select experiment type from dropdown
-3. Set iterations (default 3)
-4. Click **Run Experiment**
-5. View interactive charts for Figures 5–8
-
-### Expected Trends
-
-| Figure | Experiment | Expected Behavior |
-|--------|-----------|-------------------|
-| **Fig 5** | Completion Time vs Tasks | HH lowest delay; divergence increases after 100 tasks |
-| **Fig 6** | Energy vs Tasks | HH lowest energy; RR highest; waiting delay effect after 100 tasks |
-| **Fig 7** | Reliability vs Tasks | All decrease; HH highest; under 100 tasks similar |
-| **Fig 8** | Reliability vs Tolerance | All increase; HH highest across all tolerance values |
-
-### Why HH Outperforms
-
-The Hybrid Heuristic (HH) algorithm combines the **global exploration** of IPSO
-with the **local exploitation** of IACO:
-
-- **Step A**: IPSO generates a globally-diverse initial solution
-- **Step B**: IPSO result initializes IACO pheromone matrix (warm start)
-- **Step C**: IACO refines the solution with intensified local search
-
-This two-phase approach avoids the premature convergence of standalone IPSO
-while benefiting from IACO's ability to find high-quality local optima.
-
-### Waiting Delay Effect (>100 tasks)
-
-When task count exceeds fog node capacity (~100 tasks for 10 nodes):
-- **Terminal waiting delay** increases as tasks queue at devices
-- **Fog node queue delay** grows as nodes become saturated
-- Energy model: `TotalEnergy = Σ (Power_j × ExecutionTime_j)`
-- The energy difference between algorithms becomes more pronounced because
-  suboptimal scheduling causes more idle waiting and resource contention
-
-### Results Output Structure
-
-```
-results/
-├── energy/
-│   ├── energy_vs_taskcount.csv
-│   └── energy_vs_taskcount.json
-├── completion_time/
-│   └── completion_time_vs_taskcount.csv
-├── reliability_taskcount/
-│   └── reliability_vs_taskcount.csv
-├── reliability_tolerance/
-│   └── reliability_vs_tolerance.csv
-├── summary_report.json
-└── simulation_log.json
-```
-
-### Experiments API Endpoints
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/v1/experiments/run` | Run experiment (body: `{experiment_type, iterations}`) |
-| GET | `/api/v1/experiments/results` | List saved result files |
-| GET | `/api/v1/experiments/summary` | Get latest summary report |
-
-### Performance Benchmark
-
-Target: 200 tasks, 10 nodes, HH runtime < 10s
-
-```bash
-npx ts-node src/scripts/run_experiments.ts --mode simulate --tasks 200 --nodes 10 --algo HH
-# Logs: scheduler_runtime_seconds, cpu_usage, memory_usage
-```
-
-### Validation Checklist
-
-- [x] HH lowest energy across all task counts
-- [x] RR highest energy across all task counts
-- [x] Reliability decreases with task number
-- [x] Reliability increases with tolerance time
-- [x] HH highest reliability across all experiments
-- [x] Experiments reproducible with fixed random seed
-- [x] All results export correctly (CSV + JSON)
+---
 
 ## 📚 References
 
@@ -581,4 +296,4 @@ npx ts-node src/scripts/run_experiments.ts --mode simulate --tasks 200 --nodes 1
 
 ---
 
-*BITS Pilani Online | BSc Computer Science | Study Project 2025-26*
+*BITS Pilani Online | BSc Computer Science | Final Year Project 2025-26*
