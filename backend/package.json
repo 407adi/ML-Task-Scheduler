@@ -13,7 +13,7 @@
     "db:seed": "ts-node prisma/seed.ts",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage",
+    "test:coverage": "jest --coverage --coverageReporters=text --coverageReporters=lcov",
     "benchmark": "ts-node src/scripts/benchmark.ts",
     "experiments": "ts-node src/scripts/run_experiments.ts",
     "experiments:energy": "ts-node src/scripts/run_experiments.ts --mode energy",

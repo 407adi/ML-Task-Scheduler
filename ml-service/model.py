@@ -228,20 +228,13 @@ class TaskPredictor:
         # 2. Make Prediction
         predicted_time = self.model.predict(X)[0]
         
-        # Base time for monotonicity guard (matches _generate_synthetic_data formula)
-        base_time = task_size * 2
-        
         # 3. Reliability Guard: Prediction Clipping & Monotonicity
         # No task can take less than its startup overhead or a minimum of 0.2s
         min_feasible_time = max(0.2, startup_overhead * 0.8)
         
-        # Guarantee monotonicity: LARGE tasks must take longer than SMALL tasks for same conditions
-        # Heuristic adjustment if model behaves erratically
-        size_multiplier = 1.0
-        if task_size == 3: size_multiplier = 1.5
-        elif task_size == 1: size_multiplier = 0.6
-        
-        predicted_time = predicted_time * 0.8 + (base_time * size_multiplier) * 0.2
+        # Use pure model prediction with only a feasibility floor guard.
+        # The trained model's non-linear boundaries are preserved rather than
+        # blending with a hardcoded linear formula.
         predicted_time = max(predicted_time, min_feasible_time)
         
         # 4. Confidence Calculation (Enhanced)
@@ -285,14 +278,10 @@ class TaskPredictor:
             resource_load = feat[3]
             startup_overhead = feat[4] if len(feat) > 4 else 1.0
             
-            # Monotonicity guard (same as predict)
-            base_time = task_size * 2
-            size_multiplier = 1.5 if task_size == 3 else (0.6 if task_size == 1 else 1.0)
-            adjusted = float(pred) * 0.8 + (base_time * size_multiplier) * 0.2
-            
-            # Feasibility guard
+            # Feasibility floor guard (same as predict)
+            # Use pure model prediction — preserve learned non-linear boundaries
             min_feasible_time = max(0.2, startup_overhead * 0.8)
-            adjusted = max(adjusted, min_feasible_time)
+            adjusted = max(float(pred), min_feasible_time)
             
             # Confidence calculation (same logic as predict)
             conf = 0.92

@@ -27,11 +27,11 @@ commonLabels:
 # Image customization (override in overlays)
 images:
   - name: ml-scheduler-api
-    newName: ghcr.io/your-org/ml-scheduler-api
+    newName: ghcr.io/shri33/ml-scheduler-api
     newTag: latest
   - name: ml-scheduler-ml
-    newName: ghcr.io/your-org/ml-scheduler-ml
+    newName: ghcr.io/shri33/ml-scheduler-ml
     newTag: latest
   - name: ml-scheduler-frontend
-    newName: ghcr.io/your-org/ml-scheduler-frontend
+    newName: ghcr.io/shri33/ml-scheduler-frontend
     newTag: latest

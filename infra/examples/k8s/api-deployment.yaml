@@ -33,7 +33,7 @@ spec:
       serviceAccountName: api-service-account
       containers:
         - name: api
-          image: ghcr.io/your-org/ml-scheduler-api:latest
+          image: ghcr.io/shri33/ml-scheduler-api:latest
           imagePullPolicy: Always
           ports:
             - name: http

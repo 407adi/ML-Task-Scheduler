@@ -29,7 +29,7 @@ spec:
       serviceAccountName: queue-worker-service-account
       containers:
         - name: queue-worker
-          image: ghcr.io/your-org/ml-scheduler-api:latest
+          image: ghcr.io/shri33/ml-scheduler-api:latest
           imagePullPolicy: Always
           command: ["node", "dist/workers/prediction.worker.js"]
           envFrom:

@@ -17,7 +17,15 @@ module.exports = {
     '!src/**/__tests__/**',
   ],
   coverageDirectory: 'coverage',
-  coverageReporters: ['text', 'lcov', 'html'],
+  coverageReporters: ['text', 'text-summary', 'lcov', 'html', 'json-summary'],
+  coverageThreshold: {
+    global: {
+      branches: 50,
+      functions: 50,
+      lines: 60,
+      statements: 60,
+    },
+  },
   verbose: true,
   testTimeout: 30000, // 30 seconds for algorithm tests
 };
