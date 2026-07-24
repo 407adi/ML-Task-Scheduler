@@ -1,7 +1,9 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import prisma from '../lib/prisma';
-import { authenticate, authorize, adminOnly, AuthRequest } from '../middleware/auth.middleware';
+import { authenticate, AuthRequest } from '../middleware/auth.middleware';
+import { authorize } from './authorize.middleware';
 import { z } from 'zod';
+import { UserRole } from '@prisma/client';
 
 const router = Router();
 
@@ -148,7 +150,7 @@ router.get('/:id', authenticate, async (req: AuthRequest, res: Response, next: N
 });
 
 // Create new device
-router.post('/', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
+router.post('/', authenticate, authorize([UserRole.ADMIN]), async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const validation = createDeviceSchema.safeParse(req.body);
     if (!validation.success) {
@@ -188,7 +190,7 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response, next: Nex
 });
 
 // Update device
-router.put('/:id', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
+router.put('/:id', authenticate, authorize([UserRole.ADMIN]), async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
     
@@ -238,7 +240,7 @@ router.put('/:id', authenticate, async (req: AuthRequest, res: Response, next: N
 });
 
 // Delete device
-router.delete('/:id', authenticate, adminOnly, async (req: AuthRequest, res: Response, next: NextFunction) => {
+router.delete('/:id', authenticate, authorize([UserRole.ADMIN]), async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
 
@@ -399,7 +401,7 @@ const deviceCommandSchema = z.object({
 });
 
 // Send command to device
-router.post('/:id/command', authenticate, authorize('ADMIN', 'USER'), async (req: AuthRequest, res: Response, next: NextFunction) => {
+router.post('/:id/command', authenticate, authorize([UserRole.ADMIN, UserRole.USER]), async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
     

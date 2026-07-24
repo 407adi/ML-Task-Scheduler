@@ -1,15 +1,17 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import prisma from '../lib/prisma';
-import { authenticate, adminOnly } from '../middleware/auth.middleware';
+import { authenticate } from '../middleware/auth.middleware';
+import { authorize } from './authorize.middleware';
 import { autoRetrainService } from '../services/autoRetrain.service';
 import { mlService } from '../services/ml.service';
 import logger from '../lib/logger';
 import { emitToAll } from '../lib/socket';
+import { UserRole } from '@prisma/client';
 
 const router = Router();
 
 // All ML management routes require admin privileges
-router.use(authenticate, adminOnly);
+router.use(authenticate, authorize([UserRole.ADMIN]));
 
 /**
  * @swagger

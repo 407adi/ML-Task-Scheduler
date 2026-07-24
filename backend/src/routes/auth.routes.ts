@@ -8,7 +8,7 @@ import { authLimiter } from '../middleware/rateLimit.middleware';
 import { setTokenCookies, clearTokenCookies, REFRESH_TOKEN_COOKIE } from '../lib/cookies';
 import { setCsrfCookie, COOKIE_SECURE } from '../middleware/csrf.middleware';
 import { z } from 'zod';
-import crypto from 'crypto';
+import crypto, { randomBytes } from 'crypto';
 
 const router = Router();
 const JWT_SECRET = process.env.JWT_SECRET || process.env.ACCESS_TOKEN_SECRET;
@@ -149,63 +149,60 @@ router.get('/google/callback', async (req: Request, res: Response) => {
     if (!profile.email || !profile.email_verified) {
       return res.redirect(frontendAuthRedirect('/login?error=google_email_not_verified'));
     }
+    const userEmail = profile.email;
 
-    let user;
     try {
-      let existingUser = await prisma.user.findUnique({
-        where: { email: profile.email }
-      });
+      const { user, accessToken, refreshToken } = await prisma.$transaction(async (tx) => {
+        let currentUser = await tx.user.findUnique({ where: { email: userEmail } });
 
-      user = existingUser;
-      if (!user) {
-        const generatedPassword = crypto.randomBytes(32).toString('hex');
-        const hashedPassword = await bcrypt.hash(generatedPassword, 12);
-
-        user = await prisma.user.create({
-          data: {
-            email: profile.email,
-            name: profile.name || profile.email.split('@')[0],
-            password: hashedPassword,
-            notifications: {
-              create: {
-                emailOnTaskComplete: true,
-                emailOnTaskFailed: true,
-                emailDailySummary: false,
-              }
-            }
-          }
-        });
-      } else if (profile.name && user.name !== profile.name) {
-        user = await prisma.user.update({
-          where: { id: user.id },
-          data: {
-            name: profile.name,
-          }
-        });
-      }
-
-      if (!user.isActive) {
-        return res.redirect(frontendAuthRedirect('/login?error=account_deactivated'));
-      }
-
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { lastLogin: new Date() }
-      });
-
-      const { accessToken, refreshToken } = generateTokens({
-        id: user.id,
-        email: user.email,
-        role: user.role,
-        picture: profile.picture
-      });
-
-      await prisma.refreshToken.create({
-        data: {
-          token: refreshToken,
-          userId: user.id,
-          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+        if (!currentUser) {
+          const hashedPassword = await bcrypt.hash(randomBytes(32).toString('hex'), 12);
+          currentUser = await tx.user.create({
+            data: {
+              email: userEmail,
+              name: profile.name || userEmail.split('@')[0],
+              password: hashedPassword,
+              notifications: {
+                create: {
+                  emailOnTaskComplete: true,
+                  emailOnTaskFailed: true,
+                  emailDailySummary: false,
+                },
+              },
+            },
+          });
+        } else if (profile.name && currentUser.name !== profile.name) {
+          currentUser = await tx.user.update({
+            where: { id: currentUser.id },
+            data: { name: profile.name },
+          });
         }
+
+        if (!currentUser.isActive) {
+          throw new Error('account_deactivated');
+        }
+
+        await tx.user.update({
+          where: { id: currentUser.id },
+          data: { lastLogin: new Date() },
+        });
+
+        const tokens = generateTokens({
+          id: currentUser.id,
+          email: currentUser.email,
+          role: currentUser.role,
+          picture: profile.picture,
+        });
+
+        await tx.refreshToken.create({
+          data: {
+            token: tokens.refreshToken,
+            userId: currentUser.id,
+            expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+          },
+        });
+
+        return { user: currentUser, ...tokens };
       });
 
       setTokenCookies(res, accessToken, refreshToken);
@@ -213,21 +210,20 @@ router.get('/google/callback', async (req: Request, res: Response) => {
       res.clearCookie(OAUTH_STATE_COOKIE, { path: '/' });
 
       return res.redirect(frontendAuthRedirect('/dashboard'));
-    } catch (dbError) {
-      console.error('Database error during Google auth:', dbError);
-      // Fallback to DEMO USER if database is completely offline
-      if (DEMO_ENABLED) {
-        const { accessToken, refreshToken } = generateTokens({
-          id: DEMO_USER.id,
-          email: DEMO_USER.email,
-          role: DEMO_USER.role
-        });
-        setTokenCookies(res, accessToken, refreshToken);
-        setCsrfCookie(res);
-        res.clearCookie(OAUTH_STATE_COOKIE, { path: '/' });
-        return res.redirect(frontendAuthRedirect('/dashboard'));
-      }
-      return res.redirect(frontendAuthRedirect('/login?error=google_auth_failed'));
+    } catch (err: any) {
+        if (err.message === 'account_deactivated') {
+            return res.redirect(frontendAuthRedirect('/login?error=account_deactivated'));
+        }
+        console.error('Database error during Google auth:', err);
+        // Fallback to DEMO USER if database is completely offline
+        if (DEMO_ENABLED) {
+            const { accessToken, refreshToken } = generateTokens({ id: DEMO_USER.id, email: DEMO_USER.email, role: DEMO_USER.role });
+            setTokenCookies(res, accessToken, refreshToken);
+            setCsrfCookie(res);
+            res.clearCookie(OAUTH_STATE_COOKIE, { path: '/' });
+            return res.redirect(frontendAuthRedirect('/dashboard'));
+        }
+        return res.redirect(frontendAuthRedirect('/login?error=google_auth_failed'));
     }
   } catch {
     return res.redirect(frontendAuthRedirect('/login?error=google_auth_failed'));
@@ -262,43 +258,39 @@ router.post('/register', authLimiter, async (req: Request, res: Response, next: 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // Create user
-    const user = await prisma.user.create({
-      data: {
-        email,
-        password: hashedPassword,
-        name,
-        notifications: {
-          create: {
-            emailOnTaskComplete: true,
-            emailOnTaskFailed: true,
-            emailDailySummary: false
-          }
-        }
-      },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-        createdAt: true
-      }
-    });
+    // Create user and token atomically
+    const { user, accessToken, refreshToken } = await prisma.$transaction(async (tx) => {
+      const newUser = await tx.user.create({
+        data: {
+          email,
+          password: hashedPassword,
+          name,
+          notifications: {
+            create: {
+              emailOnTaskComplete: true,
+              emailOnTaskFailed: true,
+              emailDailySummary: false,
+            },
+          },
+        },
+        select: { id: true, email: true, name: true, role: true, createdAt: true },
+      });
 
-    // Generate tokens
-    const { accessToken, refreshToken } = generateTokens({
-      id: user.id,
-      email: user.email,
-      role: user.role
-    });
+      const tokens = generateTokens({
+        id: newUser.id,
+        email: newUser.email,
+        role: newUser.role,
+      });
 
-    // Store refresh token
-    await prisma.refreshToken.create({
-      data: {
-        token: refreshToken,
-        userId: user.id,
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
-      }
+      await tx.refreshToken.create({
+        data: {
+          token: tokens.refreshToken,
+          userId: newUser.id,
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+        },
+      });
+
+      return { user: newUser, ...tokens };
     });
 
     // Set httpOnly cookies + CSRF token
@@ -389,26 +381,27 @@ router.post('/login', authLimiter, async (req: Request, res: Response, next: Nex
       });
     }
 
-    // Update last login
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { lastLogin: new Date() }
-    });
+    // Update last login and create token atomically
+    const { accessToken, refreshToken } = await prisma.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id: user.id },
+        data: { lastLogin: new Date() },
+      });
 
-    // Generate tokens
-    const { accessToken, refreshToken } = generateTokens({
-      id: user.id,
-      email: user.email,
-      role: user.role
-    });
+      const tokens = generateTokens({
+        id: user.id,
+        email: user.email,
+        role: user.role,
+      });
 
-    // Store refresh token
-    await prisma.refreshToken.create({
-      data: {
-        token: refreshToken,
-        userId: user.id,
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-      }
+      await tx.refreshToken.create({
+        data: {
+          token: tokens.refreshToken,
+          userId: user.id,
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        },
+      });
+      return tokens;
     });
 
     setTokenCookies(res, accessToken, refreshToken);
