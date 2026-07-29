@@ -85,6 +85,7 @@
     "seed": "ts-node prisma/seed.ts"
   },
   "overrides": {
+    "brace-expansion": ">=5.0.8",
     "fast-xml-parser": "^5.7.0",
     "qs": "^6.15.2"
   }
