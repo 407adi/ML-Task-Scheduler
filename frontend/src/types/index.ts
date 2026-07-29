@@ -32,7 +32,7 @@ export interface Resource {
   capacity: number;
   currentLoad: number;
   status: 'AVAILABLE' | 'BUSY' | 'OFFLINE';
-  layer: 'FOG' | 'CLOUD' | 'TERMINAL';
+  layer?: 'FOG' | 'CLOUD' | 'TERMINAL';
   createdAt: string;
   updatedAt: string;
   _count?: {
