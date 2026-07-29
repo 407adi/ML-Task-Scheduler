@@ -27,6 +27,19 @@ const saveLocalTasks = (tasks: Task[]) => {
   }
 };
 
+const DEMO_RESOURCES: Resource[] = [
+  { id: 'res-1', name: 'Cloud-Server-1', capacity: 100, currentLoad: 35, status: 'AVAILABLE', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), _count: { tasks: 4 } },
+  { id: 'res-2', name: 'Cloud-Server-2', capacity: 100, currentLoad: 60, status: 'AVAILABLE', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), _count: { tasks: 6 } },
+  { id: 'res-3', name: 'Fog-Node-A', capacity: 50, currentLoad: 20, status: 'AVAILABLE', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), _count: { tasks: 2 } },
+  { id: 'res-4', name: 'Fog-Node-B', capacity: 50, currentLoad: 45, status: 'AVAILABLE', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), _count: { tasks: 3 } },
+  { id: 'res-5', name: 'Fog-Node-C', capacity: 40, currentLoad: 15, status: 'AVAILABLE', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), _count: { tasks: 1 } },
+  { id: 'res-6', name: 'Edge-Device-1', capacity: 20, currentLoad: 10, status: 'AVAILABLE', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), _count: { tasks: 1 } },
+  { id: 'res-7', name: 'Edge-Device-2', capacity: 20, currentLoad: 80, status: 'BUSY', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), _count: { tasks: 3 } },
+  { id: 'res-8', name: 'Edge-Device-3', capacity: 15, currentLoad: 0, status: 'OFFLINE', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), _count: { tasks: 0 } },
+  { id: 'res-9', name: 'GPU-Node-1', capacity: 80, currentLoad: 50, status: 'AVAILABLE', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), _count: { tasks: 5 } },
+  { id: 'res-10', name: 'GPU-Node-2', capacity: 80, currentLoad: 25, status: 'AVAILABLE', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), _count: { tasks: 2 } }
+];
+
 interface AppState {
   // Tasks
   tasks: Task[];
@@ -147,12 +160,13 @@ export const useStore = create<AppState>()((set, get) => ({
   fetchResources: async (status?: string) => {
     set({ resourcesLoading: true, error: null });
     try {
-      const resources = await resourceApi.getAll(status);
+      const serverResources = await resourceApi.getAll(status);
+      const resources = (serverResources && serverResources.length > 0) ? serverResources : DEMO_RESOURCES;
       set({ resources, resourcesLoading: false });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to fetch resources';
       console.error('Failed to fetch resources:', error);
-      set({ resourcesLoading: false, error: message });
+      set({ resources: DEMO_RESOURCES, resourcesLoading: false, error: message });
     }
   },
   addResource: (resource: Resource) =>
