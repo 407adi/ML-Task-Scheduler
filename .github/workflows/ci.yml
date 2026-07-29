@@ -175,6 +175,8 @@ jobs:
           echo "JWT_SECRET=ci-smoke-test-secret-minimum-32-characters" > .env
           echo "DATABASE_URL=postgresql://postgres:postgres@db:5432/scheduler" >> .env
           echo "REDIS_URL=redis://redis:6379" >> .env
+          mkdir -p backend
+          cp .env backend/.env
 
       - name: Build containers
         run: docker compose build --no-cache

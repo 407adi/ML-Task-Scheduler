@@ -73,7 +73,8 @@ services:
       dockerfile: Dockerfile
       target: production
     env_file:
-      - ./backend/.env
+      - path: ./backend/.env
+        required: false
     container_name: task-scheduler-backend
     restart: unless-stopped
     ports:
