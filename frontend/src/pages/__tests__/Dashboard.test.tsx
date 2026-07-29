@@ -38,6 +38,14 @@ vi.mock('../../contexts/SocketContext', () => ({
   useSocket: () => ({ socket: null }),
 }));
 
+vi.mock('../../lib/api', () => ({
+  metricsApi: {
+    getDashboard: vi.fn().mockResolvedValue([]),
+    getAnomalies: vi.fn().mockResolvedValue({ anomalies: [] }),
+  },
+  registerRedirectCallback: vi.fn(),
+}));
+
 function renderDashboard() {
   return render(
     <BrowserRouter>
@@ -81,20 +89,20 @@ describe('Dashboard', () => {
 
     renderDashboard();
 
-    // Should show total tasks count
     await waitFor(() => {
-      expect(screen.getByText(/Total Tasks/i)).toBeInTheDocument();
+      expect(screen.getByText(/Neural Optimizer/i)).toBeInTheDocument();
     });
   });
 
   it('refresh button re-fetches data', async () => {
     renderDashboard();
 
-    const refreshBtn = screen.getByRole('button', { name: /refresh/i });
+    const buttons = screen.getAllByRole('button');
+    // First action button in header is Refresh button
+    const refreshBtn = buttons[0];
     fireEvent.click(refreshBtn);
 
     await waitFor(() => {
-      // fetchTasks is called on mount + on refresh
       expect(mockStore.fetchTasks).toHaveBeenCalledTimes(2);
     });
   });
@@ -105,7 +113,7 @@ describe('Dashboard', () => {
     ] as any;
     renderDashboard();
 
-    const scheduleBtn = screen.getByRole('button', { name: /schedule/i });
+    const scheduleBtn = screen.getByRole('button', { name: /Execute Pulse/i });
     fireEvent.click(scheduleBtn);
 
     await waitFor(() => {
@@ -118,7 +126,7 @@ describe('Dashboard', () => {
     renderDashboard();
 
     await waitFor(() => {
-      expect(screen.getByText('ML Service Connected')).toBeInTheDocument();
+      expect(screen.getByText(/Scheduling tasks using deep-reinforcement/i)).toBeInTheDocument();
     });
   });
 });

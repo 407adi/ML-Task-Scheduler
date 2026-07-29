@@ -45,13 +45,17 @@ export const useToastStore = create<ToastState>((set) => ({
   warning: (title, message) => set((state) => { state.addToast('warning', title, message); return {}; }),
 }));
 
+import { createContext, useContext } from 'react';
+
+const ToastContext = createContext<boolean>(false);
+
 // Backward compatibility hook so we don't need to refactor every component using useToast
 export function useToast() {
-  const store = useToastStore();
-  if (!store) {
+  const isInsideProvider = useContext(ToastContext);
+  if (!isInsideProvider) {
     throw new Error('useToast must be used within a ToastProvider');
   }
-  return store;
+  return useToastStore();
 }
 
 // Global Toast Container (should be rendered near root)
@@ -71,10 +75,10 @@ export function ToastContainer() {
 // Keep the provider export but just return children + container to avoid breaking App.tsx
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
-    <>
+    <ToastContext.Provider value={true}>
       {children}
       <ToastContainer />
-    </>
+    </ToastContext.Provider>
   );
 }
 

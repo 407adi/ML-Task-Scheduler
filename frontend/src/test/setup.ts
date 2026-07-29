@@ -1,6 +1,14 @@
 import { vi } from 'vitest';
 import '@testing-library/jest-dom';
 
+vi.mock('react', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('react')>();
+  return {
+    ...actual,
+    useOptimistic: (actual as any).useOptimistic || ((passthrough: any) => [passthrough, () => {}]),
+  };
+});
+
 // Mock window.matchMedia
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
@@ -26,11 +34,11 @@ const localStorageMock = {
 Object.defineProperty(window, 'localStorage', { value: localStorageMock });
 
 // Mock ResizeObserver
-globalThis.ResizeObserver = vi.fn().mockImplementation(() => ({
-  observe: vi.fn(),
-  unobserve: vi.fn(),
-  disconnect: vi.fn(),
-}));
+globalThis.ResizeObserver = class {
+  observe = vi.fn();
+  unobserve = vi.fn();
+  disconnect = vi.fn();
+} as any;
 
 // Suppress console errors during tests (optional)
 // vi.spyOn(console, 'error').mockImplementation(() => {});
