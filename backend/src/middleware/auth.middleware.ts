@@ -39,6 +39,10 @@ export const authenticate = async (
     }
 
     if (!token) {
+      if (DEMO_ENABLED) {
+        req.user = { userId: 'demo-user-001', email: 'demo@example.com', role: 'ADMIN' };
+        return next();
+      }
       return res.status(401).json({
         success: false,
         error: 'Access denied. No token provided.'
