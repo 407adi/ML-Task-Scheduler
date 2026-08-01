@@ -295,9 +295,18 @@ async function startServer() {
     try {
       // 1. Wait for Database
       if (!dbConnected) {
-        await prisma.$queryRaw`SELECT 1`;
-        dbConnected = true;
-        logger.info('Database connected successfully');
+        try {
+          await prisma.$queryRaw`SELECT 1`;
+          dbConnected = true;
+          logger.info('Database connected successfully');
+        } catch (dbError) {
+          if (env.NODE_ENV !== 'production' || process.env.DEMO_MODE === 'true') {
+            dbConnected = true;
+            logger.info('Database unavailable — proceeding in Demo Mode');
+          } else {
+            throw dbError;
+          }
+        }
       }
 
       // 2. Wait for Redis

@@ -586,24 +586,21 @@ router.get('/metrics', async (req: Request, res: Response) => {
     const type = validation.success ? (validation.data.type || 'all') : 'all';
     // As per paper: 50, 100, 150, 200, 250, 300
     const taskCounts = [50, 100, 150, 200, 250, 300];
-    const metrics: any[] = [];
     
-    for (const count of taskCounts) {
+    const metrics = taskCounts.map(count => {
       const testDevices = generateSampleDevices(Math.min(count, 30));
       const testTasks = generateSampleTasks(count, testDevices);
       const testFogNodes = generateSampleFogNodes(10);
-      
-      const workerPayload = { tasks: testTasks, fogNodes: testFogNodes, devices: testDevices };
-      const [hh, ipso, iaco, fcfs, rr, minMin] = await Promise.all([
-        runSchedulingInWorker({ ...workerPayload, algorithm: 'hh' }),
-        runSchedulingInWorker({ ...workerPayload, algorithm: 'ipso' }),
-        runSchedulingInWorker({ ...workerPayload, algorithm: 'iaco' }),
-        runSchedulingInWorker({ ...workerPayload, algorithm: 'fcfs' }),
-        runSchedulingInWorker({ ...workerPayload, algorithm: 'rr' }),
-        runSchedulingInWorker({ ...workerPayload, algorithm: 'min-min' }),
-      ]);
-      
-      metrics.push({
+
+      const hhScheduler = new HybridHeuristicScheduler(testTasks, testFogNodes, testDevices);
+      const hh = hhScheduler.schedule();
+      const ipso = ipsoOnlySchedule(testTasks, testFogNodes, testDevices);
+      const iaco = iacoOnlySchedule(testTasks, testFogNodes, testDevices);
+      const fcfs = fcfsSchedule(testTasks, testFogNodes, testDevices);
+      const rr = roundRobinSchedule(testTasks, testFogNodes, testDevices);
+      const minMin = minMinSchedule(testTasks, testFogNodes, testDevices);
+
+      return {
         taskCount: count,
         completionTime: {
           hh: parseFloat(hh.totalDelay.toFixed(2)),
@@ -629,8 +626,8 @@ router.get('/metrics', async (req: Request, res: Response) => {
           rr: parseFloat(rr.reliability.toFixed(2)),
           minMin: parseFloat(minMin.reliability.toFixed(2))
         }
-      });
-    }
+      };
+    });
     
     res.json({
       success: true,
@@ -894,28 +891,23 @@ router.get('/export/json', async (req: Request, res: Response) => {
 router.get('/tolerance-reliability', async (req: Request, res: Response) => {
   try {
     // As per paper: 10s to 100s in steps of 10
+    const taskCount = 200;
     const toleranceTimes = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
-    const metrics: any[] = [];
-    const taskCount = 200; // Fixed at 200 as per paper
-    
-    for (const maxTime of toleranceTimes) {
+    const metrics = toleranceTimes.map(maxTime => {
       const testDevices = generateSampleDevices(20);
-      // Generate tasks with specific max tolerance time
       const testTasks = generateSampleTasks(taskCount, testDevices).map(task => ({
         ...task,
         maxToleranceTime: maxTime
       }));
       const testFogNodes = generateSampleFogNodes(10);
-      
-      const workerPayload = { tasks: testTasks, fogNodes: testFogNodes, devices: testDevices };
-      const [hh, ipso, iaco, rr] = await Promise.all([
-        runSchedulingInWorker({ ...workerPayload, algorithm: 'hh' }),
-        runSchedulingInWorker({ ...workerPayload, algorithm: 'ipso' }),
-        runSchedulingInWorker({ ...workerPayload, algorithm: 'iaco' }),
-        runSchedulingInWorker({ ...workerPayload, algorithm: 'rr' }),
-      ]);
-      
-      metrics.push({
+
+      const hhScheduler = new HybridHeuristicScheduler(testTasks, testFogNodes, testDevices);
+      const hh = hhScheduler.schedule();
+      const ipso = ipsoOnlySchedule(testTasks, testFogNodes, testDevices);
+      const iaco = iacoOnlySchedule(testTasks, testFogNodes, testDevices);
+      const rr = roundRobinSchedule(testTasks, testFogNodes, testDevices);
+
+      return {
         maxToleranceTime: maxTime,
         reliability: {
           hh: parseFloat(hh.reliability.toFixed(2)),
@@ -923,8 +915,8 @@ router.get('/tolerance-reliability', async (req: Request, res: Response) => {
           iaco: parseFloat(iaco.reliability.toFixed(2)),
           rr: parseFloat(rr.reliability.toFixed(2))
         }
-      });
-    }
+      };
+    });
     
     res.json({
       success: true,

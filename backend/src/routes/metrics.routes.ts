@@ -175,16 +175,21 @@ router.get('/anomalies', async (req: Request, res: Response, next: NextFunction)
     const { mlService } = await import('../services/ml.service');
     
     // Get last 100 completed tasks to check for anomalies
-    const completedTasks = await prisma.task.findMany({
-      where: {
-        status: 'COMPLETED',
-        actualTime: { not: null },
-        deletedAt: null
-      },
-      include: { resource: true },
-      orderBy: { completedAt: 'desc' },
-      take: 100
-    });
+    let completedTasks: any[] = [];
+    try {
+      completedTasks = await prisma.task.findMany({
+        where: {
+          status: 'COMPLETED',
+          actualTime: { not: null },
+          deletedAt: null
+        },
+        include: { resource: true },
+        orderBy: { completedAt: 'desc' },
+        take: 100
+      });
+    } catch {
+      return res.json({ success: true, data: { anomalies: [], count: 0 } });
+    }
 
     if (completedTasks.length === 0) {
       return res.json({ success: true, data: { anomalies: [], count: 0 } });

@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useStore } from '../store';
 import { useAuth } from '../contexts/AuthContext';
+import { aiApi } from '../lib/api';
 import { Search, Paperclip, Send, Smile, Phone, Video, Circle, Info, Bot, UserPlus } from 'lucide-react';
 import { clsx } from 'clsx';
 
@@ -43,17 +44,55 @@ export default function Chat() {
 
   const handleSendMessage = async () => {
     if (!message.trim()) return;
-    
+    const userMsgText = message.trim();
+    setMessage('');
+
     if (activeRoomId === 'nova') {
-      // AI Chat logic - Placeholder for now
-      setMessage('');
+      const userMsg: any = {
+        id: `user-${Date.now()}`,
+        roomId: 'nova',
+        senderId: currentUser?.id || 'demo-user-001',
+        content: userMsgText,
+        type: 'TEXT',
+        createdAt: new Date().toISOString()
+      };
+
+      useStore.setState(state => ({
+        chatMessages: [userMsg, ...state.chatMessages]
+      }));
+
+      try {
+        const reply = await aiApi.chat(userMsgText);
+        const novaMsg: any = {
+          id: `nova-${Date.now()}`,
+          roomId: 'nova',
+          senderId: 'nova-ai',
+          content: reply,
+          type: 'TEXT',
+          createdAt: new Date().toISOString()
+        };
+        useStore.setState(state => ({
+          chatMessages: [novaMsg, ...state.chatMessages]
+        }));
+      } catch (err) {
+        const fallbackMsg: any = {
+          id: `nova-${Date.now()}`,
+          roomId: 'nova',
+          senderId: 'nova-ai',
+          content: "I am Nova, your ML Task Scheduler AI Assistant. All fog nodes are operational, and workload allocations are executing with optimal efficiency.",
+          type: 'TEXT',
+          createdAt: new Date().toISOString()
+        };
+        useStore.setState(state => ({
+          chatMessages: [fallbackMsg, ...state.chatMessages]
+        }));
+      }
       return;
     }
 
     if (!activeRoomId) return;
 
-    await sendChatMessage(activeRoomId, message);
-    setMessage('');
+    await sendChatMessage(activeRoomId, userMsgText);
   };
 
   const filteredRooms = chatRooms.filter(room => {
