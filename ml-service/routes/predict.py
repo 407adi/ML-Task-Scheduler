@@ -45,13 +45,13 @@ def predict():
                 "ml.task_size": task_size, "ml.task_type": task_type,
                 "ml.priority": priority, "ml.resource_load": resource_load,
             }) as span:
-                predicted_time, confidence = predictor.predict(
+                predicted_time, confidence, lower_bound, upper_bound = predictor.predict(
                     task_size, task_type, priority, resource_load, startup_overhead
                 )
                 span.set_attribute("ml.predicted_time", predicted_time)
                 span.set_attribute("ml.confidence", confidence)
         else:
-            predicted_time, confidence = predictor.predict(
+            predicted_time, confidence, lower_bound, upper_bound = predictor.predict(
                 task_size, task_type, priority, resource_load, startup_overhead
             )
         latency = time.time() - start
@@ -62,6 +62,8 @@ def predict():
         return jsonify({
             'predictedTime': round(predicted_time, 2),
             'confidence': round(confidence, 4),
+            'lowerBound': round(lower_bound, 2),
+            'upperBound': round(upper_bound, 2),
             'modelVersion': predictor.get_version()
         })
         
@@ -126,10 +128,12 @@ def predict_batch():
             features = [vt[2] for vt in valid_tasks]
             batch_results = predictor.predict_batch(features)
             
-            for (idx, task_id, _feats), (predicted_time, confidence) in zip(valid_tasks, batch_results):
+            for (idx, task_id, _feats), (predicted_time, confidence, lower_bound, upper_bound) in zip(valid_tasks, batch_results):
                 prediction_result = {
                     'predictedTime': round(predicted_time, 2),
-                    'confidence': round(confidence, 4)
+                    'confidence': round(confidence, 4),
+                    'lowerBound': round(lower_bound, 2),
+                    'upperBound': round(upper_bound, 2),
                 }
                 if task_id is not None:
                     prediction_result['taskId'] = task_id
@@ -175,7 +179,7 @@ def predict_with_interval():
 
         intervals = cp.predict_interval(X_single)
         lower, upper = intervals[0]
-        pred_time, confidence = predictor.predict(*X_single[0])
+        pred_time, confidence, _, _ = predictor.predict(*X_single[0])
 
         return jsonify({
             'predictedTime': round(pred_time, 2),

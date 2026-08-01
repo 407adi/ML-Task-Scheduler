@@ -597,7 +597,7 @@ const profileSchema = z.object({
   email: z.string().email('Invalid email address').optional(),
 });
 
-router.put('/profile', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
+const handleProfileUpdate = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const validation = profileSchema.safeParse(req.body);
     if (!validation.success) {
@@ -643,7 +643,10 @@ router.put('/profile', authenticate, async (req: AuthRequest, res: Response, nex
   } catch (error) {
     next(error);
   }
-});
+};
+
+router.put('/profile', authenticate, handleProfileUpdate);
+router.patch('/profile', authenticate, handleProfileUpdate);
 
 const forgotPasswordSchema = z.object({
   email: z.string().email('Invalid email address')

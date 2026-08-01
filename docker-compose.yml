@@ -138,7 +138,7 @@ services:
       PORT: 5001
       FLASK_ENV: ${FLASK_ENV:-development}
       DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-password}@db:5432/${DB_NAME:-task_scheduler}?schema=public&connection_limit=5
-      ML_API_KEY: ${ML_API_KEY:-ml-secret-key-change-in-production}
+      ML_API_KEY: ${ML_API_KEY:-}
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:5001/api/health || exit 1"]
       interval: 10s
@@ -337,7 +337,7 @@ services:
       DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-password}@db:5432/${DB_NAME:-task_scheduler}?schema=public
       REDIS_URL: redis://redis:6379
       ML_SERVICE_URL: http://ml-service:5001
-      ML_API_KEY: ${ML_API_KEY:-ml-secret-key-change-in-production}
+      ML_API_KEY: ${ML_API_KEY:-}
       NODE_ENV: production
     command: node dist/workers/autoRetrain.worker.js
     depends_on:

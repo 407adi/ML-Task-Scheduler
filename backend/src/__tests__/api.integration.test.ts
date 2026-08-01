@@ -187,8 +187,10 @@ describe('Error Handler', () => {
     expect(res.json).toHaveBeenCalledWith(
       expect.objectContaining({
         success: false,
-        error: 'Not found',
-        code: 'NOT_FOUND',
+        error: expect.objectContaining({
+          code: 'NOT_FOUND',
+          message: 'Not found',
+        }),
       })
     );
   });
@@ -218,7 +220,9 @@ describe('Error Handler', () => {
     expect(res.json).toHaveBeenCalledWith(
       expect.objectContaining({
         success: false,
-        error: 'Validation failed',
+        error: expect.objectContaining({
+          code: 'VALIDATION_ERROR',
+        }),
       })
     );
   });

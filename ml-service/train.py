@@ -29,6 +29,7 @@ import numpy as np
 import pandas as pd
 import joblib
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
+from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import KFold, train_test_split
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from dotenv import load_dotenv
@@ -201,9 +202,13 @@ def train(args):
         X_tr, X_val = X_dev[train_idx], X_dev[val_idx]
         y_tr, y_val = y_dev[train_idx], y_dev[val_idx]
 
+        fold_scaler = StandardScaler()
+        X_tr_scaled = fold_scaler.fit_transform(X_tr)
+        X_val_scaled = fold_scaler.transform(X_val)
+
         model = build_model(args.model, args.seed)
-        model.fit(X_tr, y_tr)
-        y_pred = model.predict(X_val)
+        model.fit(X_tr_scaled, y_tr)
+        y_pred = model.predict(X_val_scaled)
 
         mae = mean_absolute_error(y_val, y_pred)
         rmse = float(np.sqrt(mean_squared_error(y_val, y_pred)))
@@ -218,17 +223,30 @@ def train(args):
     }
     print(f"\n📈 CV Average: MAE={avg['mae']:.4f}  RMSE={avg['rmse']:.4f}  R²={avg['r2']:.4f}")
 
-    # 4. Final model trained on full dev set, evaluated on held-out test
+    # 4. Final model trained on full dev set with StandardScaler & Conformal calibration
+    scaler = StandardScaler()
+    X_dev_scaled = scaler.fit_transform(X_dev)
+    X_test_scaled = scaler.transform(X_test)
+
     final_model = build_model(args.model, args.seed)
-    final_model.fit(X_dev, y_dev)
-    y_test_pred = final_model.predict(X_test)
+    final_model.fit(X_dev_scaled, y_dev)
+    y_test_pred = final_model.predict(X_test_scaled)
+
+    # Conformal calibration on dev set
+    dev_preds = final_model.predict(X_dev_scaled)
+    dev_residuals = np.abs(y_dev - dev_preds)
+    alpha = 0.05
+    n_dev = len(dev_residuals)
+    q_level = min(1.0, np.ceil((n_dev + 1) * (1 - alpha)) / n_dev)
+    calibration_quantile = float(np.quantile(dev_residuals, q_level))
 
     test_metrics = {
         "mae": float(mean_absolute_error(y_test, y_test_pred)),
         "rmse": float(np.sqrt(mean_squared_error(y_test, y_test_pred))),
         "r2": float(r2_score(y_test, y_test_pred)),
+        "conformal_quantile_95": round(calibration_quantile, 4),
     }
-    print(f"\n🧪 Test set: MAE={test_metrics['mae']:.4f}  RMSE={test_metrics['rmse']:.4f}  R²={test_metrics['r2']:.4f}")
+    print(f"\n🧪 Test set: MAE={test_metrics['mae']:.4f}  RMSE={test_metrics['rmse']:.4f}  R²={test_metrics['r2']:.4f}  Conformal95={calibration_quantile:.4f}s")
 
     # 5. Feature importance
     importance = {}
@@ -237,7 +255,7 @@ def train(args):
             importance[name] = round(float(imp), 4)
         print(f"\n🔍 Feature Importance: {importance}")
 
-    # 6. Save model + metadata
+    # 6. Save model + scaler + metadata
     version = f"v{datetime.now().strftime('%Y%m%d%H%M%S')}"
     model_path = Path(args.output) if args.output else MODEL_DIR / "task_predictor.joblib"
     MODEL_DIR.mkdir(parents=True, exist_ok=True)
@@ -245,6 +263,8 @@ def train(args):
 
     joblib.dump({
         "model": final_model,
+        "scaler": scaler,
+        "calibration_quantile": calibration_quantile,
         "version": version,
         "model_type": args.model,
     }, model_path)

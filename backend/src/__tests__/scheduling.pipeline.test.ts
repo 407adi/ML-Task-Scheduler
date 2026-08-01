@@ -80,10 +80,18 @@ function setupMocksAndRequire(overrides: {
     __esModule: true,
     default: {
       task: {
-        findMany: jest.fn().mockResolvedValue([]),
+        findMany: jest.fn().mockResolvedValue(pending),
+        findUnique: jest.fn().mockResolvedValue(MOCK_TASK()),
         update: jest.fn().mockImplementation(({ where, data }: any) => {
           effects.taskUpdates.push({ id: where.id, data });
           return Promise.resolve({ ...MOCK_TASK(), ...data });
+        }),
+      },
+      resource: {
+        findMany: jest.fn().mockResolvedValue(available),
+        update: jest.fn().mockImplementation(({ where, data }: any) => {
+          effects.resourceUpdates.push({ id: where.id, load: data.currentLoad });
+          return Promise.resolve({ ...MOCK_RESOURCE(), currentLoad: data.currentLoad });
         }),
       },
       scheduleHistory: {
@@ -99,6 +107,18 @@ function setupMocksAndRequire(overrides: {
           return Promise.resolve({ id: 'pred-001', ...data });
         }),
       },
+      $transaction: jest.fn().mockImplementation(async (cb: any) => {
+        const tx = {
+          task: {
+            findUnique: jest.fn().mockResolvedValue(MOCK_TASK()),
+            update: jest.fn().mockImplementation(({ where, data }: any) => {
+              effects.taskUpdates.push({ id: where.id, data });
+              return Promise.resolve({ ...MOCK_TASK(), ...data });
+            }),
+          },
+        };
+        return cb(tx);
+      }),
     },
   }));
 

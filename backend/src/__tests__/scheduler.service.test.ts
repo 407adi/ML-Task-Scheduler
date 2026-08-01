@@ -15,7 +15,8 @@ describe('SchedulerService', () => {
     it('should exist and be instantiable', () => {
       // Mock all dependencies
       jest.doMock('../lib/prisma', () => ({
-        default: { task: { findMany: jest.fn() }, scheduleHistory: { create: jest.fn() } }
+        __esModule: true,
+        default: { task: { findMany: jest.fn().mockResolvedValue([]) }, resource: { findMany: jest.fn().mockResolvedValue([]) }, scheduleHistory: { create: jest.fn() } }
       }));
       jest.doMock('../services/task.service', () => ({
         taskService: { findPending: jest.fn().mockResolvedValue([]) }
@@ -38,7 +39,12 @@ describe('SchedulerService', () => {
 
     it('should return empty array when no pending tasks', async () => {
       jest.doMock('../lib/prisma', () => ({
-        default: { task: { findMany: jest.fn() }, scheduleHistory: { create: jest.fn() } }
+        __esModule: true,
+        default: {
+          task: { findMany: jest.fn().mockResolvedValue([]) },
+          resource: { findMany: jest.fn().mockResolvedValue([]) },
+          scheduleHistory: { create: jest.fn() }
+        }
       }));
       jest.doMock('../services/task.service', () => ({
         taskService: { findPending: jest.fn().mockResolvedValue([]) }
@@ -71,7 +77,12 @@ describe('SchedulerService', () => {
       };
 
       jest.doMock('../lib/prisma', () => ({
-        default: { task: { findMany: jest.fn() }, scheduleHistory: { create: jest.fn() } }
+        __esModule: true,
+        default: {
+          task: { findMany: jest.fn().mockResolvedValue([mockTask]) },
+          resource: { findMany: jest.fn().mockResolvedValue([]) },
+          scheduleHistory: { create: jest.fn() }
+        }
       }));
       jest.doMock('../services/task.service', () => ({
         taskService: { findPending: jest.fn().mockResolvedValue([mockTask]) }

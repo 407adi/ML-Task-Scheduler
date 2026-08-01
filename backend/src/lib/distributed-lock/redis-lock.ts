@@ -24,18 +24,18 @@ export interface LockResult {
 }
 
 export async function acquireLock(key: string, ttlSeconds: number): Promise<LockResult> {
-  const client = redisService.getClient();
+  const client = redisService?.getClient ? redisService.getClient() : null;
   const token = randomUUID();
 
   // In development/test, if Redis is down, we might fail-open if configured,
   // but for concurrency guarantees we should fail-closed in production.
-  if (!client || !redisService.isAvailable()) {
+  if (!client || !redisService?.isAvailable?.()) {
     const isProduction = process.env.NODE_ENV === 'production';
     if (isProduction) {
-      logger.error(`Redis is unavailable. Lock acquisition failed for key: ${key}`);
+      if (typeof logger?.error === 'function') logger.error(`Redis is unavailable. Lock acquisition failed for key: ${key}`);
       return { acquired: false, token: '' };
     }
-    logger.warn(`Redis is unavailable. Fail-open lock acquisition for key: ${key}`);
+    if (typeof logger?.warn === 'function') logger.warn(`Redis is unavailable. Fail-open lock acquisition for key: ${key}`);
     return { acquired: true, token };
   }
 
@@ -44,15 +44,15 @@ export async function acquireLock(key: string, ttlSeconds: number): Promise<Lock
     const acquired = result === 'OK';
     return { acquired, token: acquired ? token : '' };
   } catch (error) {
-    logger.error(`Error acquiring lock for key ${key}`, error instanceof Error ? error : new Error(String(error)));
+    if (typeof logger?.error === 'function') logger.error(`Error acquiring lock for key ${key}`, error instanceof Error ? error : new Error(String(error)));
     const isProduction = process.env.NODE_ENV === 'production';
     return { acquired: !isProduction, token: !isProduction ? token : '' };
   }
 }
 
 export async function releaseLock(key: string, token: string): Promise<boolean> {
-  const client = redisService.getClient();
-  if (!client || !redisService.isAvailable() || !token) {
+  const client = redisService?.getClient ? redisService.getClient() : null;
+  if (!client || !redisService?.isAvailable?.() || !token) {
     return true; // If Redis is down, consider released or bypass
   }
 
@@ -66,8 +66,8 @@ export async function releaseLock(key: string, token: string): Promise<boolean> 
 }
 
 export async function extendLock(key: string, token: string, ttlSeconds: number): Promise<boolean> {
-  const client = redisService.getClient();
-  if (!client || !redisService.isAvailable() || !token) {
+  const client = redisService?.getClient ? redisService.getClient() : null;
+  if (!client || !redisService?.isAvailable?.() || !token) {
     return false;
   }
 

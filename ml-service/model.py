@@ -7,6 +7,7 @@ import os
 import numpy as np
 import joblib
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor, IsolationForest
+from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import cross_val_score
 from datetime import datetime
 
@@ -23,7 +24,9 @@ class TaskPredictor:
     def __init__(self, model_path='models/task_predictor.joblib', model_type='random_forest'):
         self.model_path = model_path
         self.model = None
+        self.scaler = None
         self.version = None
+        self.calibration_quantile = 0.5  # Default fallback residual bound (s)
         self.model_type = model_type  # 'random_forest', 'xgboost', or 'gradient_boosting'
         self.last_loaded_time = 0
         self._load_or_create_model()
@@ -34,10 +37,12 @@ class TaskPredictor:
             try:
                 data = joblib.load(self.model_path)
                 self.model = data['model']
+                self.scaler = data.get('scaler', None)
                 self.version = data['version']
+                self.calibration_quantile = data.get('calibration_quantile', 0.5)
                 self.model_type = data.get('model_type', 'random_forest')
                 self.last_loaded_time = os.path.getmtime(self.model_path)
-                print(f"✅ Loaded {self.model_type} model version: {self.version}")
+                print(f"✅ Loaded {self.model_type} model version: {self.version} (scaler: {self.scaler is not None})")
                 return
             except Exception as e:
                 print(f"⚠️ Failed to load model: {e}")
@@ -101,8 +106,12 @@ class TaskPredictor:
         self.train(X, y)
     
     def train(self, X, y):
-        """Train the model with provided data"""
-        # Create model based on type
+        """Train the model with provided data using StandardScaler and Conformal Calibration"""
+        # 1. Fit StandardScaler
+        self.scaler = StandardScaler()
+        X_scaled = self.scaler.fit_transform(X)
+
+        # 2. Create model based on type
         if self.model_type == 'xgboost' and XGBOOST_AVAILABLE:
             self.model = xgb.XGBRegressor(
                 n_estimators=200,
@@ -135,11 +144,18 @@ class TaskPredictor:
                 n_jobs=-1
             )
         
-        self.model.fit(X, y)
+        self.model.fit(X_scaled, y)
         
+        # 3. Conformal prediction calibration (95% coverage -> alpha = 0.05)
+        preds = self.model.predict(X_scaled)
+        residuals = np.abs(y - preds)
+        n = len(residuals)
+        alpha = 0.05
+        q_level = min(1.0, np.ceil((n + 1) * (1 - alpha)) / n)
+        self.calibration_quantile = float(np.quantile(residuals, q_level))
         
         # Calculate cross-validation score (R^2)
-        cv_scores = cross_val_score(self.model, X, y, cv=5, scoring='r2')
+        cv_scores = cross_val_score(self.model, X_scaled, y, cv=5, scoring='r2')
         
         # Update version
         self.version = f"v{datetime.now().strftime('%Y%m%d%H%M%S')}"
@@ -148,7 +164,7 @@ class TaskPredictor:
         self._save_model()
         
         # Get feature importance
-        importance = [0.25, 0.25, 0.25, 0.25]
+        importance = [0.2, 0.2, 0.2, 0.2, 0.2]
         try:
             if hasattr(self.model, 'feature_importances_'):
                 importance = self.model.feature_importances_
@@ -160,6 +176,7 @@ class TaskPredictor:
             'r2_score': round(float(np.mean(cv_scores)), 4),
             'r2_std': round(float(np.std(cv_scores)), 4),
             'samples_trained': len(y),
+            'conformal_quantile_95': round(self.calibration_quantile, 4),
             'feature_importance': {
                 'taskSize': round(float(importance[0]), 4),
                 'taskType': round(float(importance[1]), 4),
@@ -169,19 +186,21 @@ class TaskPredictor:
             }
         }
         
-        print(f"✅ {self.model_type} model trained - R² Score: {metrics['r2_score']}")
+        print(f"✅ {self.model_type} model trained - R² Score: {metrics['r2_score']}, Conformal 95% Quantile: {metrics['conformal_quantile_95']}s")
         
         return metrics
     
     def _save_model(self):
-        """Save model to disk"""
+        """Save model and scaler to disk"""
         os.makedirs(os.path.dirname(self.model_path), exist_ok=True)
         joblib.dump({
             'model': self.model,
+            'scaler': self.scaler,
             'version': self.version,
+            'calibration_quantile': self.calibration_quantile,
             'model_type': self.model_type
         }, self.model_path)
-        print(f"💾 Model saved: {self.model_path}")
+        print(f"💾 Model and Scaler saved: {self.model_path}")
     
     def retrain(self, X_new, y_new, incremental=False):
         """Retrain model with new data"""
@@ -209,68 +228,88 @@ class TaskPredictor:
     
     def predict(self, task_size, task_type, priority, resource_load, startup_overhead=1.0):
         """
-        Predict execution time for a task with feature normalization and reliability guards
+        Predict execution time for a task with feature normalization (StandardScaler),
+        conformal prediction intervals, and reliability guards.
         """
         if self.model is None:
             raise ValueError("Model not loaded")
         
-        # 1. Feature Guard & Normalization (Simple min-max scaling proxy)
-        # In a real system, we'd use sklearn.preprocessing.StandardScaler saved as an artifact
+        # 1. Feature Guard & Clipping
         task_size = np.clip(task_size, 1, 3)
         task_type = np.clip(task_type, 1, 3)
         priority = np.clip(priority, 1, 5)
         resource_load = np.clip(resource_load, 0, 100)
         startup_overhead = np.clip(startup_overhead, 0.1, 10.0)
 
-        # Prepare features
-        X = np.array([[task_size, task_type, priority, resource_load, startup_overhead]])
+        # Prepare features dynamically matching scaler/model feature count
+        n_feats = getattr(self.scaler, 'n_features_in_', getattr(self.model, 'n_features_in_', 5))
+        if n_feats == 4:
+            X_raw = np.array([[task_size, task_type, priority, resource_load]])
+        else:
+            X_raw = np.array([[task_size, task_type, priority, resource_load, startup_overhead]])
+        
+        # Apply StandardScaler if available
+        if self.scaler is not None:
+            X_scaled = self.scaler.transform(X_raw)
+        else:
+            X_scaled = X_raw
         
         # 2. Make Prediction
-        predicted_time = self.model.predict(X)[0]
+        predicted_time = self.model.predict(X_scaled)[0]
         
-        # 3. Reliability Guard: Prediction Clipping & Monotonicity
-        # No task can take less than its startup overhead or a minimum of 0.2s
+        # 3. Reliability Guard & Conformal Prediction Interval
         min_feasible_time = max(0.2, startup_overhead * 0.8)
-        
-        # Use pure model prediction with only a feasibility floor guard.
-        # The trained model's non-linear boundaries are preserved rather than
-        # blending with a hardcoded linear formula.
         predicted_time = max(predicted_time, min_feasible_time)
         
+        lower_bound = max(min_feasible_time, float(predicted_time - self.calibration_quantile))
+        upper_bound = float(predicted_time + self.calibration_quantile)
+        
         # 4. Confidence Calculation (Enhanced)
-        # Confidence decreases if features are at extreme ranges (unseen data)
         confidence = 0.92
         if resource_load > 92 or resource_load < 5:
             confidence -= 0.15
         if task_size == 3 and resource_load > 85:
             confidence -= 0.10
         
-        # Clamp confidence to [0, 1]
         confidence = max(0.1, min(1.0, confidence))
             
-        return float(predicted_time), float(confidence)
+        return float(predicted_time), float(confidence), float(lower_bound), float(upper_bound)
     
     def predict_batch(self, features_list):
         """
-        Vectorized batch prediction with the same reliability guards
-        as single predict().
+        Vectorized batch prediction with StandardScaler and conformal prediction intervals.
         Returns:
-            list of (predicted_time, confidence) tuples
+            list of (predicted_time, confidence, lower_bound, upper_bound) tuples
         """
         if self.model is None:
             raise ValueError("Model not loaded")
         
-        # features_list expected to have 5 elements per item: [size, type, priority, load, overhead]
-        X = np.array(features_list)
+        # features_list expected to have 4 or 5 elements per item
+        X_in = np.array(features_list)
+        n_feats = getattr(self.scaler, 'n_features_in_', getattr(self.model, 'n_features_in_', 5))
+        
+        if X_in.shape[1] > n_feats:
+            X = X_in[:, :n_feats]
+        elif X_in.shape[1] < n_feats:
+            pad = np.ones((len(X_in), n_feats - X_in.shape[1]))
+            X = np.hstack([X_in, pad])
+        else:
+            X = X_in.copy()
         
         # Clip features to valid ranges (same as predict)
         X[:, 0] = np.clip(X[:, 0], 1, 3)   # task_size
         X[:, 1] = np.clip(X[:, 1], 1, 3)   # task_type
         X[:, 2] = np.clip(X[:, 2], 1, 5)   # priority
         X[:, 3] = np.clip(X[:, 3], 0, 100) # resource_load
-        X[:, 4] = np.clip(X[:, 4], 0.1, 10.0) # startup_overhead
+        if n_feats >= 5:
+            X[:, 4] = np.clip(X[:, 4], 0.1, 10.0) # startup_overhead
         
-        predictions = self.model.predict(X)
+        if self.scaler is not None:
+            X_scaled = self.scaler.transform(X)
+        else:
+            X_scaled = X
+            
+        predictions = self.model.predict(X_scaled)
         
         results = []
         for pred, feat in zip(predictions, features_list):
@@ -278,12 +317,14 @@ class TaskPredictor:
             resource_load = feat[3]
             startup_overhead = feat[4] if len(feat) > 4 else 1.0
             
-            # Feasibility floor guard (same as predict)
-            # Use pure model prediction — preserve learned non-linear boundaries
+            # Feasibility floor guard
             min_feasible_time = max(0.2, startup_overhead * 0.8)
             adjusted = max(float(pred), min_feasible_time)
             
-            # Confidence calculation (same logic as predict)
+            lower_bound = max(min_feasible_time, float(adjusted - self.calibration_quantile))
+            upper_bound = float(adjusted + self.calibration_quantile)
+            
+            # Confidence calculation
             conf = 0.92
             if resource_load > 92 or resource_load < 5:
                 conf -= 0.15
@@ -291,7 +332,7 @@ class TaskPredictor:
                 conf -= 0.10
             conf = max(0.1, min(1.0, conf))
             
-            results.append((adjusted, conf))
+            results.append((adjusted, conf, lower_bound, upper_bound))
             
         return results
     
@@ -316,7 +357,8 @@ class TaskPredictor:
 
         try:
             # 1. Prediction-based anomalies (Z-score of residuals)
-            predicted_times = self.model.predict(X)
+            X_scaled = self.scaler.transform(X) if self.scaler is not None else X
+            predicted_times = self.model.predict(X_scaled)
             residuals = np.abs(actual_times - predicted_times)
             mean_res = np.mean(residuals)
             std_res = np.std(residuals)
@@ -361,9 +403,9 @@ if __name__ == '__main__':
     print("\nTest Predictions:")
     print("-" * 60)
     for size, type_, priority, load, overhead in test_cases:
-        pred_time, confidence = predictor.predict(size, type_, priority, load, overhead)
+        pred_time, confidence, lower, upper = predictor.predict(size, type_, priority, load, overhead)
         size_name = ['', 'SMALL', 'MEDIUM', 'LARGE'][size]
         type_name = ['', 'CPU', 'IO', 'MIXED'][type_]
         print(f"{size_name} {type_name} task, P{priority}, {load}% load, {overhead}s overhead")
-        print(f"  → Predicted Runtime: {pred_time:.2f}s (confidence: {confidence:.2%})")
+        print(f"  → Predicted Runtime: {pred_time:.2f}s (95% CI: [{lower:.2f}s, {upper:.2f}s], confidence: {confidence:.2%})")
         print()

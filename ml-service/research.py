@@ -137,7 +137,7 @@ class SHAPExplainer:
         summary = explainer.feature_summary()
     """
 
-    FEATURE_NAMES = ['taskSize', 'taskType', 'priority', 'resourceLoad']
+    FEATURE_NAMES = ['taskSize', 'taskType', 'priority', 'resourceLoad', 'startupOverhead']
 
     def __init__(self, model, X_background: np.ndarray):
         if not SHAP_AVAILABLE:

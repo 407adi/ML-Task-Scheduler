@@ -129,18 +129,15 @@ export function calculateExecutionTime(task: Task, fogNode: FogNode): number {
  * where rij = B * log2(1 + h*p/σ) - simplified to Di / Bj
  */
 export function calculateTransmissionTime(task: Task, fogNode: FogNode | CloudNode): number {
-  // TRij = baseLatency + (Di / Bj)
-  return fogNode.baseLatency + (task.dataSize / fogNode.networkBandwidth);
+  return task.dataSize / fogNode.networkBandwidth;
 }
 
 /**
- * Calculate total delay
- * Tij = TRij + TEij
+ * Calculate total delay (Equation 4)
+ * Tij = TEij + TRij
  */
 export function calculateTotalDelay(task: Task, fogNode: FogNode | CloudNode): number {
-  // Tij = TRij + TEij + Si
-  const baseDelay = calculateTransmissionTime(task, fogNode) + calculateExecutionTime(task, fogNode as FogNode);
-  return baseDelay + task.startupOverhead;
+  return calculateExecutionTime(task, fogNode as FogNode) + calculateTransmissionTime(task, fogNode);
 }
 
 /**
@@ -197,10 +194,12 @@ export function calculateObjectiveFunction(
     // Hardware constraint penalty (Phase 7 Hardening)
     let hardwarePenalty = 0;
     if (task.memoryRequirement > fogNode.totalMemory) {
-      hardwarePenalty += 1000 * (task.memoryRequirement / fogNode.totalMemory);
+      const denom = fogNode.totalMemory > 0 ? fogNode.totalMemory : 1;
+      hardwarePenalty += 1000 * (task.memoryRequirement / denom);
     }
     if (task.vramRequirement > fogNode.totalVram) {
-      hardwarePenalty += 1000 * (task.vramRequirement / fogNode.totalVram);
+      const denom = fogNode.totalVram > 0 ? fogNode.totalVram : 1;
+      hardwarePenalty += 1000 * (task.vramRequirement / denom);
     }
 
     totalDelay += device.delayWeight * delay;

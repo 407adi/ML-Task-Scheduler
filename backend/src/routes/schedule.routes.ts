@@ -14,7 +14,7 @@ const scheduleRequestSchema = z.object({
   taskIds: z.array(z.string().uuid()).optional(),
   algorithm: z.enum([
     'ml_enhanced', 'hybrid_heuristic', 'ipso', 'iaco',
-    'round_robin', 'min_min', 'fcfs', 'edf', 'sjf',
+    'round_robin', 'min_min', 'fcfs', 'edf', 'sjf', 'rl_ppo',
   ]).optional().default('ml_enhanced'),
   seed: z.number().int().optional(),
   timeBudgetMs: z.number().int().min(100).max(120_000).optional(),

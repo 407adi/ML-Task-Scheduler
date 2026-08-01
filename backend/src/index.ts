@@ -56,14 +56,18 @@ if (isProduction() && (!allowedOrigins || allowedOrigins.length === 0)) {
 
 import { setIo } from './lib/socket';
 
-// Helper for CORS origin validation. If allowedOrigins is undefined, no restriction is applied.
-const originValidator = allowedOrigins
-  ? ((origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-      if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) return callback(null, true);
-      return callback(new Error('CORS origin denied'));
-    })
-  : undefined;
+// Helper for CORS origin validation.
+const originValidator = (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+  if (!origin) return callback(null, true);
+  if (!isProduction()) {
+    if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+      return callback(null, true);
+    }
+  }
+  if (allowedOrigins && allowedOrigins.includes(origin)) return callback(null, true);
+  if (!allowedOrigins) return callback(null, true);
+  return callback(new Error('CORS origin denied'));
+};
 
 const io = new Server(httpServer, {
   cors: {
@@ -170,8 +174,8 @@ app.use('/api/v1/experiments', experimentsRoutes);
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/ml', mlRoutes);
 
-// Optional modules isolated behind a feature flag
-if (process.env.ENABLE_OPTIONAL_MODULES === 'true') {
+// Optional modules enabled by default (set ENABLE_OPTIONAL_MODULES=false to disable)
+if (process.env.ENABLE_OPTIONAL_MODULES !== 'false') {
   app.use('/api/v1/ai', aiRoutes);
   app.use('/api/v1/chaos', chaosRoutes);
   app.use('/api/v1/chat', chatRoutes);
