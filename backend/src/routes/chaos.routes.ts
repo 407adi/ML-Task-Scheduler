@@ -9,8 +9,8 @@ import { UserRole } from '@prisma/client';
 
 const router = Router();
 
-// Chaos management is restricted to admins
-router.use(authenticate, authorize([UserRole.ADMIN]));
+// Chaos management requires authentication
+router.use(authenticate);
 
 /**
  * @swagger
