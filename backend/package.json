@@ -21,8 +21,8 @@
     "experiments:reliability-tolerance": "ts-node src/scripts/run_experiments.ts --mode reliability-tolerance",
     "experiments:all": "ts-node src/scripts/run_experiments.ts --mode all",
     "simulate": "ts-node src/scripts/run_experiments.ts --mode simulate",
-    "demo": "ts-node src/scripts/demo-data.ts",
-    "presentation": "ts-node src/scripts/presentation.ts",
+    "demo": "node dist/scripts/demo-data.js",
+    "presentation": "node dist/scripts/presentation.js",
     "lint": "eslint src --ext .ts"
   },
   "dependencies": {
