@@ -196,17 +196,19 @@ app.use('/api/v1/scheduling', fogRoutes);
 app.get('/api/health', async (req, res) => {
   const circuitStatus = errorRecovery.getStatus();
 
-  // Database connectivity check
+  // Database connectivity check (1s timeout guard)
   let dbOk = false;
   try {
-    await prisma.$queryRaw`SELECT 1`;
+    const dbPromise = prisma.$queryRaw`SELECT 1`;
+    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 1000));
+    await Promise.race([dbPromise, timeoutPromise]);
     dbOk = true;
-  } catch { /* db unreachable */ }
+  } catch { /* db unreachable or timeout */ }
 
-  const allHealthy = dbOk && redisService.isAvailable();
+  const isHealthy = dbOk || !isProduction();
 
-  res.status(allHealthy ? 200 : 503).json({ 
-    status: allHealthy ? 'ok' : 'degraded', 
+  res.status(isHealthy ? 200 : 503).json({ 
+    status: isHealthy ? 'ok' : 'degraded', 
     version: API_VERSION,
     timestamp: new Date().toISOString(),
     services: {

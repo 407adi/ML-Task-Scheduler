@@ -240,12 +240,20 @@ export const useStore = create<AppState>()((set, get) => ({
   fetchMlData: async () => {
     set({ mlDataLoading: true, error: null });
     try {
-      const [models, jobs, config] = await Promise.all([
+      const statusPromise = scheduleApi.getMlStatus().catch(() => ({ mlServiceAvailable: false }));
+      const [models, jobs, config, status] = await Promise.all([
         mlApi.getModels(),
         mlApi.getTrainingJobs(),
-        mlApi.getConfig()
+        mlApi.getConfig(),
+        statusPromise,
       ]);
-      set({ mlModels: models, trainingJobs: jobs, mlConfig: config, mlDataLoading: false });
+      set({ 
+        mlModels: models, 
+        trainingJobs: jobs, 
+        mlConfig: config, 
+        mlAvailable: status.mlServiceAvailable,
+        mlDataLoading: false 
+      });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to fetch ML data';
       set({ mlDataLoading: false, error: message });
