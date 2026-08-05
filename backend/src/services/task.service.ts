@@ -47,7 +47,7 @@ export class TaskService {
     const where = {
       deletedAt: null,
       ...(status ? { status } : {}),
-      userId: userId?.startsWith('demo-') ? null : userId
+      ...(userId ? { OR: [{ userId }, { userId: null }] } : {})
     };
 
     const [items, total] = await Promise.all([

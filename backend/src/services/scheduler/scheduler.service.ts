@@ -55,7 +55,7 @@ export class SchedulerService {
       let tasks: Task[];
       if (taskIds && taskIds.length > 0) {
         const dbTasks = await prisma.task.findMany({
-          where: { id: { in: taskIds }, status: 'PENDING' },
+          where: { id: { in: taskIds }, status: { not: 'COMPLETED' } },
           orderBy: [{ priority: 'desc' }, { createdAt: 'asc' }]
         });
         tasks = dbTasks.map(t => ({
@@ -253,7 +253,7 @@ export class SchedulerService {
     let tasks: Task[];
     if (taskIds && taskIds.length > 0) {
       const dbTasks = await prisma.task.findMany({
-        where: { id: { in: taskIds }, status: 'PENDING' },
+        where: { id: { in: taskIds }, status: { not: 'COMPLETED' } },
         orderBy: [{ priority: 'desc' }, { createdAt: 'asc' }],
       });
       tasks = dbTasks.map(t => ({

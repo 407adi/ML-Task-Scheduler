@@ -386,7 +386,35 @@ export const useStore = create<AppState>()((set, get) => ({
   runScheduler: async (taskIds?: string[]) => {
     set({ scheduling: true, error: null });
     try {
-      await scheduleApi.run(taskIds);
+      // Handle local-only tasks if present
+      const localIds = taskIds?.filter((id) => id.startsWith('local-')) || [];
+      const serverIds = taskIds?.filter((id) => !id.startsWith('local-'));
+
+      if (localIds.length > 0) {
+        const state = get();
+        const availableResource = state.resources.find((r) => r.status === 'AVAILABLE') || DEMO_RESOURCES[0];
+        const updatedTasks = state.tasks.map((t) => {
+          if (localIds.includes(t.id)) {
+            return {
+              ...t,
+              status: 'SCHEDULED' as const,
+              resourceId: availableResource.id,
+              resource: availableResource,
+              scheduledAt: new Date().toISOString(),
+              predictedTime: t.predictedTime || 45.0,
+            };
+          }
+          return t;
+        });
+        saveLocalTasks(updatedTasks);
+        set({ tasks: updatedTasks });
+      }
+
+      // Run backend scheduler for server tasks (or all tasks if taskIds is undefined)
+      if (!taskIds || (serverIds && serverIds.length > 0)) {
+        await scheduleApi.run(serverIds && serverIds.length > 0 ? serverIds : undefined);
+      }
+
       // Refresh tasks and resources after scheduling
       await get().fetchTasks();
       await get().fetchResources();

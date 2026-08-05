@@ -52,8 +52,8 @@ export class SchedulerRepository {
         select: { status: true, resourceId: true }
       });
 
-      if (!task || task.status !== 'PENDING' || task.resourceId) {
-        // Skip already assigned/scheduled tasks
+      if (!task || task.status === 'COMPLETED') {
+        // Skip completed tasks
         return;
       }
 

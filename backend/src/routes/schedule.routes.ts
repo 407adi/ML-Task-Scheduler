@@ -11,7 +11,7 @@ const router = Router();
 router.use(authenticate);
 
 const scheduleRequestSchema = z.object({
-  taskIds: z.array(z.string().uuid()).optional(),
+  taskIds: z.array(z.string()).optional(),
   algorithm: z.enum([
     'ml_enhanced', 'hybrid_heuristic', 'ipso', 'iaco',
     'round_robin', 'min_min', 'fcfs', 'edf', 'sjf', 'rl_ppo',
