@@ -164,7 +164,7 @@ export const generateTokens = (user: { id: string; email: string; role: string; 
   );
 
   const refreshToken = jwt.sign(
-    { userId: user.id, type: 'refresh' },
+    { userId: user.id, type: 'refresh', nonce: Math.random().toString(36).substring(2) + Date.now().toString(36) },
     process.env.REFRESH_TOKEN_SECRET || JWT_SECRET,
     { expiresIn: '7d' }
   );
