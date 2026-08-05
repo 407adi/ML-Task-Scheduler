@@ -8,7 +8,8 @@ export class HybridHeuristicScheduler {
   constructor(
     private tasks: Task[],
     private fogNodes: FogNode[],
-    private devices: TerminalDevice[]
+    private devices: TerminalDevice[],
+    private maxIterations: number = 50
   ) {}
 
   schedule(): SchedulingSolution {
@@ -16,7 +17,7 @@ export class HybridHeuristicScheduler {
 
     // Step 1: Run IPSO
     logger.debug('Phase 1: Running Improved PSO');
-    const ipso = new ImprovedPSO(this.tasks, this.fogNodes, this.devices, 30, 50);
+    const ipso = new ImprovedPSO(this.tasks, this.fogNodes, this.devices, 30, this.maxIterations);
     const psoResult = ipso.run();
     logger.debug('PSO completed', { bestFitness: psoResult.bestFitness });
 
@@ -27,7 +28,7 @@ export class HybridHeuristicScheduler {
       this.fogNodes, 
       this.devices, 
       30, 
-      50,
+      this.maxIterations,
       psoResult.bestPosition // Initial pheromone from PSO
     );
     const acoResult = iaco.run();

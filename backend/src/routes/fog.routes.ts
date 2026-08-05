@@ -592,10 +592,10 @@ router.get('/metrics', async (req: Request, res: Response) => {
       const testTasks = generateSampleTasks(count, testDevices);
       const testFogNodes = generateSampleFogNodes(10);
 
-      const hhScheduler = new HybridHeuristicScheduler(testTasks, testFogNodes, testDevices);
+      const hhScheduler = new HybridHeuristicScheduler(testTasks, testFogNodes, testDevices, 10);
       const hh = hhScheduler.schedule();
-      const ipso = ipsoOnlySchedule(testTasks, testFogNodes, testDevices);
-      const iaco = iacoOnlySchedule(testTasks, testFogNodes, testDevices);
+      const ipso = ipsoOnlySchedule(testTasks, testFogNodes, testDevices, 15, 10);
+      const iaco = iacoOnlySchedule(testTasks, testFogNodes, testDevices, 15, 10);
       const fcfs = fcfsSchedule(testTasks, testFogNodes, testDevices);
       const rr = roundRobinSchedule(testTasks, testFogNodes, testDevices);
       const minMin = minMinSchedule(testTasks, testFogNodes, testDevices);
@@ -901,10 +901,10 @@ router.get('/tolerance-reliability', async (req: Request, res: Response) => {
       }));
       const testFogNodes = generateSampleFogNodes(10);
 
-      const hhScheduler = new HybridHeuristicScheduler(testTasks, testFogNodes, testDevices);
+      const hhScheduler = new HybridHeuristicScheduler(testTasks, testFogNodes, testDevices, 10);
       const hh = hhScheduler.schedule();
-      const ipso = ipsoOnlySchedule(testTasks, testFogNodes, testDevices);
-      const iaco = iacoOnlySchedule(testTasks, testFogNodes, testDevices);
+      const ipso = ipsoOnlySchedule(testTasks, testFogNodes, testDevices, 15, 10);
+      const iaco = iacoOnlySchedule(testTasks, testFogNodes, testDevices, 15, 10);
       const rr = roundRobinSchedule(testTasks, testFogNodes, testDevices);
 
       return {

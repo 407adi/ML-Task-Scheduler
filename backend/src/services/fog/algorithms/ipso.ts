@@ -176,9 +176,11 @@ export class ImprovedPSO {
 export function ipsoOnlySchedule(
   tasks: Task[],
   fogNodes: FogNode[],
-  devices: TerminalDevice[]
+  devices: TerminalDevice[],
+  numParticles: number = 30,
+  maxIterations: number = 100
 ): SchedulingSolution {
-  const ipso = new ImprovedPSO(tasks, fogNodes, devices, 30, 100);
+  const ipso = new ImprovedPSO(tasks, fogNodes, devices, numParticles, maxIterations);
   const psoResult = ipso.run();
   
   const allocations = new Map<string, string>();

@@ -178,9 +178,11 @@ export class ImprovedACO {
 export function iacoOnlySchedule(
   tasks: Task[],
   fogNodes: FogNode[],
-  devices: TerminalDevice[]
+  devices: TerminalDevice[],
+  numAnts: number = 30,
+  maxIterations: number = 100
 ): SchedulingSolution {
-  const iaco = new ImprovedACO(tasks, fogNodes, devices, 30, 100);
+  const iaco = new ImprovedACO(tasks, fogNodes, devices, numAnts, maxIterations);
   const acoResult = iaco.run();
   
   const allocations = new Map<string, string>();

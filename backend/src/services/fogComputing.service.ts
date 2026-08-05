@@ -645,7 +645,8 @@ export class HybridHeuristicScheduler {
   constructor(
     private tasks: Task[],
     private fogNodes: FogNode[],
-    private devices: TerminalDevice[]
+    private devices: TerminalDevice[],
+    private maxIterations: number = 50
   ) {}
 
   /**
@@ -659,7 +660,7 @@ export class HybridHeuristicScheduler {
 
     // Step 1: Run IPSO
     logger.debug('Phase 1: Running Improved PSO');
-    const ipso = new ImprovedPSO(this.tasks, this.fogNodes, this.devices, 30, 50);
+    const ipso = new ImprovedPSO(this.tasks, this.fogNodes, this.devices, 30, this.maxIterations);
     const psoResult = ipso.run();
     logger.debug('PSO completed', { bestFitness: psoResult.bestFitness });
 
@@ -670,7 +671,7 @@ export class HybridHeuristicScheduler {
       this.fogNodes, 
       this.devices, 
       30, 
-      50,
+      this.maxIterations,
       psoResult.bestPosition // Initial pheromone from PSO
     );
     const acoResult = iaco.run();
@@ -766,9 +767,11 @@ export class HybridHeuristicScheduler {
 export function ipsoOnlySchedule(
   tasks: Task[],
   fogNodes: FogNode[],
-  devices: TerminalDevice[]
+  devices: TerminalDevice[],
+  numParticles: number = 30,
+  maxIterations: number = 100
 ): SchedulingSolution {
-  const ipso = new ImprovedPSO(tasks, fogNodes, devices, 30, 100);
+  const ipso = new ImprovedPSO(tasks, fogNodes, devices, numParticles, maxIterations);
   const psoResult = ipso.run();
   
   // Convert PSO result to allocation map
@@ -818,9 +821,11 @@ export function ipsoOnlySchedule(
 export function iacoOnlySchedule(
   tasks: Task[],
   fogNodes: FogNode[],
-  devices: TerminalDevice[]
+  devices: TerminalDevice[],
+  numAnts: number = 30,
+  maxIterations: number = 100
 ): SchedulingSolution {
-  const iaco = new ImprovedACO(tasks, fogNodes, devices, 30, 100);
+  const iaco = new ImprovedACO(tasks, fogNodes, devices, numAnts, maxIterations);
   const acoResult = iaco.run();
   
   // Convert ACO result to allocation map
