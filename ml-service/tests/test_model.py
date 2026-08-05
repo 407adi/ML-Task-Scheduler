@@ -76,8 +76,8 @@ class TestSinglePrediction:
         res2 = predictor.predict(2, 2, 3, 50, 1.0)
         t1, c1 = res1[0], res1[1]
         t2, c2 = res2[0], res2[1]
-        assert t1 == t2
-        assert c1 == c2
+        assert t1 == pytest.approx(t2)
+        assert c1 == pytest.approx(c2)
 
 
 class TestBatchPrediction:

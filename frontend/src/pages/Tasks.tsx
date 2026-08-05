@@ -750,39 +750,35 @@ export default function Tasks() {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        {task.status === 'PENDING' && (
-                          <>
-                            <ActionButton
-                              onClick={() => runScheduler([task.id])}
-                              icon={Play}
-                              color="text-indigo-600 bg-indigo-50 dark:bg-indigo-900/30"
-                              title="Run"
-                            />
-                            <ActionButton
-                              onClick={() => setEditingTask(task)}
-                              icon={Edit}
-                              color="text-amber-600 bg-amber-50 dark:bg-amber-900/30"
-                              title="Edit"
-                            />
-                            <ActionButton
-                              onClick={() =>
-                                setDeleteTarget({ id: task.id, name: task.name })
-                              }
-                              icon={Trash2}
-                              color="text-red-600 bg-red-50 dark:bg-red-900/30"
-                              title="Delete"
-                            />
-                          </>
-                        )}
-                        {task.status === 'RUNNING' && (
+                      <div className="flex items-center justify-end gap-1">
+                        <ActionButton
+                          onClick={() => runScheduler([task.id])}
+                          icon={Play}
+                          color="text-indigo-600 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/30"
+                          title="Run Scheduler"
+                        />
+                        <ActionButton
+                          onClick={() => setEditingTask(task)}
+                          icon={Edit}
+                          color="text-amber-600 bg-amber-50 hover:bg-amber-100 dark:bg-amber-900/30"
+                          title="Edit Task"
+                        />
+                        {task.status !== 'COMPLETED' && (
                           <ActionButton
                             onClick={() => setCompleteTarget(task)}
                             icon={CheckCircle}
-                            color="text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30"
-                            title="Complete"
+                            color="text-emerald-600 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-900/30"
+                            title="Complete Task"
                           />
                         )}
+                        <ActionButton
+                          onClick={() =>
+                            setDeleteTarget({ id: task.id, name: task.name })
+                          }
+                          icon={Trash2}
+                          color="text-red-600 bg-red-50 hover:bg-red-100 dark:bg-red-900/30"
+                          title="Delete Task"
+                        />
                       </div>
                     </td>
                   </tr>
