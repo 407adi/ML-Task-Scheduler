@@ -99,21 +99,22 @@ function runAlgo(
   name: string,
   tasks: Task[],
   fogNodes: FogNode[],
-  devices: TerminalDevice[]
+  devices: TerminalDevice[],
+  maxIterations: number = 3
 ): AlgoResult {
   const start = Date.now();
   let result;
   switch (name) {
     case 'hh': {
-      const scheduler = new HybridHeuristicScheduler(tasks, fogNodes, devices);
+      const scheduler = new HybridHeuristicScheduler(tasks, fogNodes, devices, maxIterations);
       result = scheduler.schedule();
       break;
     }
     case 'ipso':
-      result = ipsoOnlySchedule(tasks, fogNodes, devices);
+      result = ipsoOnlySchedule(tasks, fogNodes, devices, 15, maxIterations);
       break;
     case 'iaco':
-      result = iacoOnlySchedule(tasks, fogNodes, devices);
+      result = iacoOnlySchedule(tasks, fogNodes, devices, 15, maxIterations);
       break;
     case 'rr':
       result = roundRobinSchedule(tasks, fogNodes, devices);

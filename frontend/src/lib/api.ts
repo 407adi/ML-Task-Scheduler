@@ -559,7 +559,7 @@ export const experimentsApi = {
     const response = await api.post<ApiResponse<ExperimentResult>>('/v1/experiments/run', {
       experiment_type: experimentType,
       iterations,
-    });
+    }, { timeout: FOG_LONG_TIMEOUT });
     return response.data.data;
   },
   getResults: async (): Promise<{ files: string[] }> => {
