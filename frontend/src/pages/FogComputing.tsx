@@ -675,7 +675,7 @@ export default function FogComputing() {
                   <Legend />
                   <Area type="monotone" dataKey="HH" stroke={ALGO_COLORS.HH} strokeWidth={3} fill="url(#energyHH)" />
                   {CHART_ALGOS.filter(a => a !== 'HH').map(alg => (
-                    <Line key={alg} type="monotone" dataKey={alg} stroke={ALGO_COLORS[alg]} strokeWidth={2} dot={false} />
+                    <Area key={alg} type="monotone" dataKey={alg} stroke={ALGO_COLORS[alg]} strokeWidth={2} fill="none" dot={false} />
                   ))}
                 </AreaChart>
               </ResponsiveContainer>
