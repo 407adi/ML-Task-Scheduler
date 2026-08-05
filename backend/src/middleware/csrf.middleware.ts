@@ -24,10 +24,7 @@ const CSRF_EXEMPT_PATHS = [
 ];
 
 /** Determine cookie secure flag — honour COOKIE_SECURE env, fallback to NODE_ENV. */
-export const COOKIE_SECURE =
-  process.env.COOKIE_SECURE !== undefined
-    ? process.env.COOKIE_SECURE === 'true'
-    : process.env.NODE_ENV === 'production';
+export const COOKIE_SECURE = process.env.COOKIE_SECURE === 'true';
 
 /** Generates a random CSRF token and sets it as a cookie. */
 export function setCsrfCookie(res: Response): string {
@@ -45,11 +42,11 @@ export function setCsrfCookie(res: Response): string {
 /**
  * Middleware that enforces CSRF on all non-safe requests.
  * Must be mounted after cookie-parser.
- * CSRF is disabled in development mode to allow easier testing.
+ * CSRF is disabled in development mode or when using Bearer auth.
  */
 export function csrfProtection(req: Request, res: Response, next: NextFunction) {
-  // Skip CSRF in development mode
-  if (process.env.NODE_ENV === 'development') {
+  // Skip CSRF in development mode or when using Bearer authentication header (Bearer token is immune to CSRF)
+  if (process.env.NODE_ENV === 'development' || req.headers.authorization?.startsWith('Bearer ')) {
     return next();
   }
 
