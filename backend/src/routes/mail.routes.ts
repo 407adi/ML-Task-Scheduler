@@ -45,6 +45,22 @@ router.get('/sent', async (req: Request, res: Response, next: NextFunction) => {
 
 /**
  * @swagger
+ * /api/v1/mail/drafts:
+ *   get:
+ *     summary: Get user drafts
+ *     tags: [Mail]
+ */
+router.get('/drafts', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    // Drafts are stored client-side for now; return empty array as placeholder
+    successResponse(res, []);
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * @swagger
  * /api/v1/mail/send:
  *   post:
  *     summary: Send a new mail
