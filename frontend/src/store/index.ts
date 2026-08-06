@@ -269,12 +269,12 @@ export const useStore = create<AppState>()((set, get) => ({
         mlApi.getConfig(),
         statusPromise,
       ]);
-      set({ 
-        mlModels: models, 
-        trainingJobs: jobs, 
-        mlConfig: config, 
+      set({
+        mlModels: models,
+        trainingJobs: jobs,
+        mlConfig: config,
         mlAvailable: status.mlServiceAvailable,
-        mlDataLoading: false 
+        mlDataLoading: false
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to fetch ML data';
