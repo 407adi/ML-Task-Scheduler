@@ -130,6 +130,10 @@ export default function LandingPage() {
   const [barsVisible, setBarsVisible] = useState(false);
   const benchRef = useRef<HTMLDivElement>(null);
 
+  const handleLoginClick = () => {
+    navigate('/login');
+  };
+
   const handleEnterSystem = () => {
     navigate(isAuthenticated ? '/dashboard' : '/login');
   };
@@ -187,7 +191,7 @@ export default function LandingPage() {
               </button>
               <button
                 id="lp-nav-login"
-                onClick={handleEnterSystem}
+                onClick={handleLoginClick}
                 className="hidden sm:block btn btn-secondary text-sm py-2 px-4"
               >
                 Log In
@@ -544,27 +548,27 @@ export default function LandingPage() {
               <h2 className="page-title mb-4">The Team</h2>
               <p className="page-subtitle text-base">BITS Pilani Online · BSc Computer Science · Team Byte_hogs</p>
             </div>
-            
+
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
               {[
-                { 
-                  name: 'Shri Srivastava', 
-                  id: '2023ebcs593', 
-                  role: 'Team Leader, Developer', 
+                {
+                  name: 'Shri Srivastava',
+                  id: '2023ebcs593',
+                  role: 'Team Leader, Developer',
                   img: 'https://media.licdn.com/dms/image/v2/D4D03AQEcj0OjaV1cTA/profile-displayphoto-scale_400_400/B4DZlmASTzJgAg-/0/1758352977139?e=1778716800&v=beta&t=BSLicgDEEWtzCFIlfgDH_f1ovuIxWYLyrYq9FEKfh88',
                   linkedin: 'https://www.linkedin.com/in/shri-srivastava-ab04a5175/',
                 },
-                { 
-                  name: 'Ichha Dwivedi',   
-                  id: '2023ebcs125', 
-                  role: 'Developer',       
+                {
+                  name: 'Ichha Dwivedi',
+                  id: '2023ebcs125',
+                  role: 'Developer',
                   img: 'https://media.licdn.com/dms/image/v2/D5635AQF4HfjRIXfDrg/profile-framedphoto-shrink_400_400/B56ZskJ.5VJ8Ac-/0/1765838155604?e=1777762800&v=beta&t=OaVHII6Mm1ZT1yogIY5awzOKQwoCrdLa1MzfEwpWW-U',
                   linkedin: 'https://www.linkedin.com/in/ichha-dwivedi-55b246288/',
                 },
-                { 
-                  name: 'Aditi Singh',     
-                  id: '2023ebcs498', 
-                  role: 'Developer',       
+                {
+                  name: 'Aditi Singh',
+                  id: '2023ebcs498',
+                  role: 'Developer',
                   img: 'https://media.licdn.com/dms/image/v2/D4D03AQHbXw028qVAFA/profile-displayphoto-scale_400_400/B4DZi9lKpqH4Ao-/0/1755527296321?e=1778716800&v=beta&t=8l36p8D5Gf9VLS9UyXfv6PSh_6VQjQgt2MrQs6hXuOc',
                   linkedin: 'https://www.linkedin.com/in/aditi-singh-041866306/',
                 },

@@ -35,7 +35,7 @@ ENV VITE_WS_URL=${VITE_WS_URL}
 ENV VITE_ENABLE_DEMO=${VITE_ENABLE_DEMO}
 
 # Build application
-RUN npm run build
+RUN npm install -D @rollup/rollup-linux-x64-musl && npm run build
 
 # -----------------------------------------------------------------------------
 # Stage 3: Production Runtime (Nginx)
@@ -77,7 +77,7 @@ EXPOSE 80
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:80/ || exit 1
+    CMD curl -f http://localhost:80/ || exit 1
 
 # Start nginx
 CMD ["nginx", "-g", "daemon off;"]
