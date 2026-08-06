@@ -17,6 +17,26 @@ import { useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 
+// ── Spline custom element type declaration ──────────────────────────────────
+// spline-viewer is a web component, not a standard HTML tag, so TS/JSX needs
+// to be told about it or it will error / strip props during build.
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'spline-viewer': React.DetailedHTMLProps<
+        React.HTMLAttributes<HTMLElement>,
+        HTMLElement
+      > & {
+        url?: string;
+        loading?: string;
+        logo?: string;
+      };
+    }
+  }
+}
+
+const SPLINE_VIEWER_SRC = 'https://unpkg.com/@splinetool/viewer@1.9.28/build/spline-viewer.js';
+
 type ViewMode = 'login' | 'register' | 'forgot-password' | 'reset-password';
 
 // ── Stat pill ────────────────────────────────────────────────────────────────
@@ -152,6 +172,7 @@ export default function Login() {
   const [resetEmailSent, setResetEmailSent] = useState(false);
   const [isLight, setIsLight] = useState(false);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [splineReady, setSplineReady] = useState(false);
   const leftPanelRef = useRef<HTMLDivElement>(null);
   const [formData, setFormData] = useState({
     email: '',
@@ -163,6 +184,32 @@ export default function Login() {
 
   const { login, register, forgotPassword, resetPassword } = useAuth();
   const toast = useToast();
+
+  // ── Load the Spline viewer web component ────────────────────────────────
+  // <spline-viewer> only works once this script has registered the custom
+  // element with the browser. Without it, the tag renders as nothing.
+  useEffect(() => {
+    if (customElements.get('spline-viewer')) {
+      setSplineReady(true);
+      return;
+    }
+
+    const existing = document.querySelector<HTMLScriptElement>(
+      `script[src="${SPLINE_VIEWER_SRC}"]`,
+    );
+
+    if (existing) {
+      existing.addEventListener('load', () => setSplineReady(true));
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.type = 'module';
+    script.src = SPLINE_VIEWER_SRC;
+    script.onload = () => setSplineReady(true);
+    script.onerror = () => console.error('Failed to load Spline viewer script');
+    document.head.appendChild(script);
+  }, []);
 
   // ── Theme colors ──────────────────────────────────────────────────────────
   const theme = {
@@ -301,6 +348,12 @@ export default function Login() {
           to   { opacity: 1; transform: translateY(0); }
         }
         .fade-up { animation: fadeUp 0.5s cubic-bezier(.22,1,.36,1) both; }
+
+        @keyframes splineFadeIn {
+          from { opacity: 0; }
+          to   { opacity: 1; }
+        }
+        .spline-fade-in { animation: splineFadeIn 0.6s ease-out both; }
 
         @keyframes morphing {
           0% {
@@ -458,20 +511,35 @@ export default function Login() {
               className="absolute z-10 pointer-events-auto"
               style={{ top: '18%', left: '18%', width: '430px', height: '430px' }}
             >
-              <spline-viewer
-                url="https://prod.spline.design/f3-TNKs3z9ZsOMZq/scene.splinecode"
-                logo="no"
-                loading="eager"
-                style={{
-  width: "70vw",
-  height: "85vh",
-  display: "block",
-  transformOrigin: "center center",
-  position: "absolute",
-  left: "-30%",
-  top: "-17%",
-}}
-              />
+              {splineReady ? (
+                <spline-viewer
+                  url="https://prod.spline.design/f3-TNKs3z9ZsOMZq/scene.splinecode"
+                  logo="no"
+                  loading="eager"
+                  className="spline-fade-in"
+                  style={{
+                    width: '70vw',
+                    height: '85vh',
+                    display: 'block',
+                    transformOrigin: 'center center',
+                    position: 'absolute',
+                    left: '-30%',
+                    top: '-17%',
+                  }}
+                />
+              ) : (
+                // Lightweight placeholder while the Spline runtime script loads,
+                // so the panel doesn't look empty/broken during that window.
+                <div
+                  style={{
+                    position: 'absolute',
+                    left: '-30%',
+                    top: '-17%',
+                    width: '70vw',
+                    height: '85vh',
+                  }}
+                />
+              )}
             </div>
             <div
               className="absolute z-0 pointer-events-none"

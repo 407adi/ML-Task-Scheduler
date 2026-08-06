@@ -27,6 +27,24 @@ const saveLocalTasks = (tasks: Task[]) => {
   }
 };
 
+const normalizeMail = (mail: any): MailMessage => ({
+  id: mail?.id ?? `mail-${Date.now()}`,
+  threadId: mail?.threadId ?? '',
+  senderId: mail?.senderId ?? '',
+  subject: mail?.subject ?? '',
+  content: mail?.content ?? '',
+  isRead: Boolean(mail?.isRead),
+  isStarred: Boolean(mail?.isStarred),
+  label: mail?.label ?? 'INBOX',
+  createdAt: mail?.createdAt ?? new Date().toISOString(),
+  sender: {
+    id: mail?.sender?.id ?? mail?.senderId ?? 'unknown',
+    name: mail?.sender?.name ?? 'System',
+    email: mail?.sender?.email ?? 'unknown@example.com'
+  },
+  attachments: Array.isArray(mail?.attachments) ? mail.attachments : []
+});
+
 const DEMO_RESOURCES: Resource[] = [
   { id: 'res-1', name: 'Cloud-Server-1', capacity: 100, currentLoad: 35, status: 'AVAILABLE', layer: 'CLOUD', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), _count: { tasks: 4 } },
   { id: 'res-2', name: 'Cloud-Server-2', capacity: 100, currentLoad: 60, status: 'AVAILABLE', layer: 'CLOUD', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), _count: { tasks: 6 } },
@@ -367,7 +385,7 @@ export const useStore = create<AppState>()((set, get) => ({
     const { mailApi } = await import('../lib/api');
     set({ mailLoading: true });
     try {
-      let mails = [];
+      let mails: any[] = [];
       if (folder === 'sent') mails = await mailApi.getSent();
       else if (folder === 'drafts') mails = await mailApi.getDrafts();
       else if (folder === 'starred') mails = await mailApi.getStarred();
@@ -416,7 +434,7 @@ export const useStore = create<AppState>()((set, get) => ({
         ];
       }
 
-      set({ mails: mails || [], mailLoading: false });
+      set({ mails: (Array.isArray(mails) ? mails : []).filter(Boolean).map(normalizeMail), mailLoading: false });
     } catch (error) {
       console.warn('Mail fetch failed, using local cache:', error);
       set({ mailLoading: false });
@@ -425,9 +443,9 @@ export const useStore = create<AppState>()((set, get) => ({
   sendMail: async (data: any) => {
     const { mailApi } = await import('../lib/api');
     try {
-      await mailApi.send(data);
+      const sentMail = await mailApi.send(data);
       // Also optimistic update
-      const newMail: any = {
+      const newMail: any = normalizeMail(sentMail ?? {
         id: `sent-${Date.now()}`,
         subject: data.subject,
         content: data.content,
@@ -438,13 +456,13 @@ export const useStore = create<AppState>()((set, get) => ({
         label: 'SENT',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
-      };
+      });
       set((state) => ({
-        mails: [newMail, ...state.mails]
+        mails: [newMail, ...state.mails.filter(Boolean).map(normalizeMail)]
       }));
     } catch (error) {
       // Still store optimistically in local state
-      const newMail: any = {
+      const newMail: any = normalizeMail({
         id: `sent-${Date.now()}`,
         subject: data.subject,
         content: data.content,
@@ -455,9 +473,9 @@ export const useStore = create<AppState>()((set, get) => ({
         label: 'SENT',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
-      };
+      });
       set((state) => ({
-        mails: [newMail, ...state.mails]
+        mails: [newMail, ...state.mails.filter(Boolean).map(normalizeMail)]
       }));
     }
   },
