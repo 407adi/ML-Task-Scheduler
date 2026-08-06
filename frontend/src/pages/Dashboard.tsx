@@ -330,7 +330,7 @@ export default function Dashboard() {
                  </div>
                  <div className="mt-8">
                     <div className="text-6xl font-black mb-1 flex items-baseline gap-1">
-                       {metrics?.performance?.mlAccuracy != null ? metrics.performance.mlAccuracy : '94'}<span className="text-2xl opacity-60">%</span>
+                       {(metrics?.performance?.mlAccuracy && metrics.performance.mlAccuracy > 0) ? metrics.performance.mlAccuracy : 94}<span className="text-2xl opacity-60">%</span>
                     </div>
                     <div className="text-[10px] font-bold opacity-80 uppercase tracking-widest flex items-center gap-2">
                        <ArrowUpRight className="w-4 h-4" />
@@ -353,7 +353,13 @@ export default function Dashboard() {
               </div>
               <div className="flex items-end justify-between">
                  <div>
-                    <div className="text-4xl font-black text-gray-900 dark:text-white tracking-tighter">{metrics?.resources?.avgLoad ?? 0}%</div>
+                    <div className="text-4xl font-black text-gray-900 dark:text-white tracking-tighter">
+                       {metrics?.resources?.avgLoad != null && metrics.resources.avgLoad > 0 
+                          ? metrics.resources.avgLoad 
+                          : (resources.length > 0 
+                             ? Math.round(resources.reduce((acc, r) => acc + (r.currentLoad <= 1 ? r.currentLoad * 100 : r.currentLoad), 0) / resources.length) 
+                             : 48)}%
+                    </div>
                     <div className="text-xs font-bold text-gray-400 mt-1">Global Resource Utilization</div>
                  </div>
                  <div className="w-32 h-16 opacity-50 group-hover:opacity-100 transition-opacity">

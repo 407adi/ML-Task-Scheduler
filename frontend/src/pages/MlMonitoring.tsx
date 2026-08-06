@@ -15,6 +15,7 @@ import {
 } from 'recharts';
 import { clsx } from 'clsx';
 import { useToast } from '../contexts/ToastContext';
+import CustomDatasetTrainerModal from '../components/CustomDatasetTrainerModal';
 
 export default function MlMonitoring() {
   const { 
@@ -30,6 +31,7 @@ export default function MlMonitoring() {
   
   const toast = useToast();
   const [isRetraining, setIsRetraining] = useState(false);
+  const [showDatasetModal, setShowDatasetModal] = useState(false);
 
   useEffect(() => {
     fetchMlData();
@@ -91,7 +93,7 @@ export default function MlMonitoring() {
             ML Model Governance
           </h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1">
-            Monitor model drift, manage versions, and configure automated feedback loops.
+            Monitor model drift, manage versions, and train on custom real-world trace datasets.
           </p>
         </div>
         
@@ -101,6 +103,14 @@ export default function MlMonitoring() {
             className="p-2.5 rounded-xl border border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
           >
             <RefreshCw className={clsx("w-5 h-5", mlDataLoading && "animate-spin")} />
+          </button>
+
+          <button
+            onClick={() => setShowDatasetModal(true)}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold border border-purple-200 dark:border-purple-800/40 bg-purple-50 dark:bg-purple-950/30 text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/40 shadow-sm transition-all cursor-pointer"
+          >
+            <Database className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+            <span>Custom Traces & Hardware</span>
           </button>
           
           <button
@@ -403,6 +413,13 @@ export default function MlMonitoring() {
             )}
           </div>
         </div>
+
+      {/* Custom Dataset & Trace Hardware Trainer Modal */}
+      <CustomDatasetTrainerModal
+        isOpen={showDatasetModal}
+        onClose={() => setShowDatasetModal(false)}
+        onModelTrained={() => fetchMlData()}
+      />
     </div>
   );
 }

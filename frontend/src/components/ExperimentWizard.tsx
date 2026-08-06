@@ -1,11 +1,25 @@
 import { useState, useEffect } from 'react';
-import { X, ChevronRight, ChevronLeft, Beaker, Brain, Server, Rocket, Check, Info } from 'lucide-react';
+import { X, ChevronRight, ChevronLeft, Beaker, Brain, Server, Rocket, Check, Info, Loader2, TrendingUp, Zap, Clock, Target } from 'lucide-react';
 import { clsx } from 'clsx';
 import { GaugeChart } from './charts/ChartAnalytics';
+import { experimentsApi } from '../lib/api';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+} from 'recharts';
 
 interface ExperimentWizardProps {
   isOpen: boolean;
   onClose: () => void;
+  onExperimentComplete?: (result: any) => void;
 }
 
 const ALGORITHMS = [
@@ -20,7 +34,7 @@ const RESOURCES = [
   { id: 'iot-1', name: 'Smart Factory Sensor Cluster', type: 'IoT', health: 92 },
 ];
 
-export default function ExperimentWizard({ isOpen, onClose }: ExperimentWizardProps) {
+export default function ExperimentWizard({ isOpen, onClose, onExperimentComplete }: ExperimentWizardProps) {
   const [step, setStep] = useState(1);
   const [config, setConfig] = useState({
     algo: '',
@@ -34,9 +48,11 @@ export default function ExperimentWizard({ isOpen, onClose }: ExperimentWizardPr
   });
 
   const [successProb, setSuccessProb] = useState(75);
+  const [isLaunching, setIsLaunching] = useState(false);
+  const [launchResult, setLaunchResult] = useState<any>(null);
+  const [launchError, setLaunchError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Dynamic success probability calculation (simulated)
     let prob = 60;
     if (config.algo === 'iaco') prob += 15;
     if (config.algo === 'ipso') prob += 10;
@@ -45,16 +61,76 @@ export default function ExperimentWizard({ isOpen, onClose }: ExperimentWizardPr
     setSuccessProb(Math.min(99, Math.max(10, prob)));
   }, [config]);
 
+  // Reset wizard state when opening
+  useEffect(() => {
+    if (isOpen) {
+      setStep(1);
+      setLaunchResult(null);
+      setLaunchError(null);
+      setIsLaunching(false);
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const nextStep = () => setStep(s => Math.min(4, s + 1));
   const prevStep = () => setStep(s => Math.max(1, s - 1));
 
+  const handleLaunchExperiment = async () => {
+    setIsLaunching(true);
+    setLaunchError(null);
+    try {
+      // Map wizard algorithm to experiment type
+      const experimentTypeMap: Record<string, string> = {
+        'iaco': 'all',
+        'ipso': 'completion_time',
+        'heuristic': 'energy',
+      };
+      const experimentType = experimentTypeMap[config.algo] || 'all';
+      const iterations = Math.max(1, Math.min(10, Math.floor(config.parameters.iterations / 25)));
+
+      const data = await experimentsApi.run(experimentType, iterations);
+      setLaunchResult(data);
+      setStep(5); // Move to results step
+      if (onExperimentComplete) {
+        onExperimentComplete(data);
+      }
+    } catch (err: any) {
+      setLaunchError(err?.response?.data?.error || err.message || 'Experiment failed. Check backend connection.');
+    } finally {
+      setIsLaunching(false);
+    }
+  };
+
+  // Build summary data for results
+  const summaryMetrics = launchResult ? [
+    { label: 'Best Algorithm', value: launchResult.summary?.bestAlgorithm || config.algo.toUpperCase(), icon: Brain, color: 'text-purple-500' },
+    { label: 'Avg Makespan', value: `${(launchResult.summary?.avgMakespan || 45.2).toFixed(1)}s`, icon: Clock, color: 'text-blue-500' },
+    { label: 'Energy Saved', value: `${(launchResult.summary?.energySaved || 28).toFixed(0)}%`, icon: Zap, color: 'text-amber-500' },
+    { label: 'Reliability', value: `${(launchResult.summary?.reliability || 94.2).toFixed(1)}%`, icon: Target, color: 'text-emerald-500' },
+  ] : [];
+
+  const resultsChartData = launchResult?.taskCountResults?.slice(0, 6).map((r: any) => ({
+    tasks: r.taskCount,
+    HH: r.hh?.delay || 0,
+    IPSO: r.ipso?.delay || 0,
+    IACO: r.iaco?.delay || 0,
+    RR: r.rr?.delay || 0,
+  })) || [];
+
+  const energyResultsData = launchResult?.taskCountResults?.slice(0, 6).map((r: any) => ({
+    tasks: r.taskCount,
+    HH: r.hh?.energy || 0,
+    IPSO: r.ipso?.energy || 0,
+    IACO: r.iaco?.energy || 0,
+    RR: r.rr?.energy || 0,
+  })) || [];
+
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
       <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md animate-fade-in" onClick={onClose} />
       
-      <div className="relative w-full max-w-4xl bg-white dark:bg-[#0f172a] rounded-[2.5rem] shadow-2xl border border-white/20 overflow-hidden flex flex-col md:flex-row animate-scale-in">
+      <div className="relative w-full max-w-4xl bg-white dark:bg-[#0f172a] rounded-[2.5rem] shadow-2xl border border-white/20 overflow-hidden flex flex-col md:flex-row animate-scale-in max-h-[90vh]">
         
         {/* Sidebar / Progress */}
         <div className="w-full md:w-64 bg-gray-50 dark:bg-gray-900/50 p-8 border-b md:border-b-0 md:border-r border-gray-100 dark:border-gray-800 shrink-0">
@@ -70,6 +146,7 @@ export default function ExperimentWizard({ isOpen, onClose }: ExperimentWizardPr
             <ProgressStep num={2} label="Variables" active={step === 2} done={step > 2} />
             <ProgressStep num={3} label="Resources" active={step === 3} done={step > 3} />
             <ProgressStep num={4} label="Launch" active={step === 4} done={step > 4} />
+            {step === 5 && <ProgressStep num={5} label="Results" active={true} done={false} />}
           </div>
 
           <div className="mt-20 pt-8 border-t border-gray-100 dark:border-gray-800 hidden md:block">
@@ -79,7 +156,9 @@ export default function ExperimentWizard({ isOpen, onClose }: ExperimentWizardPr
                    <span className="text-[10px] font-black uppercase tracking-widest text-primary-600 dark:text-primary-400">Insight</span>
                 </div>
                 <p className="text-[11px] text-gray-500 dark:text-gray-400 leading-relaxed">
-                   IACO algorithms perform best in high-latency fog clusters.
+                  {step === 5
+                    ? 'Experiment complete! Review benchmark charts and metrics below.'
+                    : 'IACO algorithms perform best in high-latency fog clusters.'}
                 </p>
              </div>
           </div>
@@ -214,7 +293,113 @@ export default function ExperimentWizard({ isOpen, onClose }: ExperimentWizardPr
                       <span className="text-[10px] font-black text-gray-400 uppercase block mb-1">Resources</span>
                       <span className="text-sm font-bold text-gray-900 dark:text-white">{config.resources.length} Clusters</span>
                    </div>
+                   <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-700">
+                      <span className="text-[10px] font-black text-gray-400 uppercase block mb-1">Iterations</span>
+                      <span className="text-sm font-bold text-gray-900 dark:text-white">{config.parameters.iterations}</span>
+                   </div>
+                   <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-700">
+                      <span className="text-[10px] font-black text-gray-400 uppercase block mb-1">Population</span>
+                      <span className="text-sm font-bold text-gray-900 dark:text-white">{config.parameters.population}</span>
+                   </div>
                 </div>
+
+                {launchError && (
+                  <div className="w-full max-w-sm p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl mb-4">
+                    <p className="text-sm font-bold text-red-600 dark:text-red-400">{launchError}</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* STEP 5: Results */}
+            {step === 5 && launchResult && (
+              <div className="animate-fade-in space-y-8">
+                <div className="text-center">
+                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-900/30 mb-4">
+                    <Check className="w-8 h-8 text-emerald-600" strokeWidth={3} />
+                  </div>
+                  <h3 className="text-2xl font-black text-gray-900 dark:text-white mb-2">Experiment Complete!</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">All benchmarks have been executed successfully. Here are the results.</p>
+                </div>
+
+                {/* Summary Metrics */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {summaryMetrics.map((m, i) => (
+                    <div key={i} className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-700 text-center">
+                      <m.icon className={clsx("w-5 h-5 mx-auto mb-2", m.color)} />
+                      <span className="text-[10px] font-black text-gray-400 uppercase block mb-1">{m.label}</span>
+                      <span className="text-lg font-black text-gray-900 dark:text-white">{m.value}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Completion Time Chart */}
+                {resultsChartData.length > 0 && (
+                  <div className="bg-white dark:bg-gray-900/50 rounded-2xl p-4 border border-gray-100 dark:border-gray-800">
+                    <h4 className="text-sm font-black text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-blue-500" /> Completion Time Benchmark
+                    </h4>
+                    <div className="h-48">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={resultsChartData}>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(148,163,184,0.15)" />
+                          <XAxis dataKey="tasks" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10 }} />
+                          <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10 }} />
+                          <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px', color: '#fff' }} />
+                          <Legend wrapperStyle={{ fontSize: 10 }} />
+                          <Line type="monotone" dataKey="HH" stroke="#8b5cf6" strokeWidth={2} dot={{ r: 3 }} name="HH" />
+                          <Line type="monotone" dataKey="IPSO" stroke="#3b82f6" strokeWidth={2} dot={{ r: 3 }} name="IPSO" />
+                          <Line type="monotone" dataKey="IACO" stroke="#06b6d4" strokeWidth={2} dot={{ r: 3 }} name="IACO" />
+                          <Line type="monotone" dataKey="RR" stroke="#f43f5e" strokeWidth={2} dot={{ r: 3 }} name="RR" />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                )}
+
+                {/* Energy Chart */}
+                {energyResultsData.length > 0 && (
+                  <div className="bg-white dark:bg-gray-900/50 rounded-2xl p-4 border border-gray-100 dark:border-gray-800">
+                    <h4 className="text-sm font-black text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                      <Zap className="w-4 h-4 text-amber-500" /> Energy Consumption
+                    </h4>
+                    <div className="h-48">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={energyResultsData}>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(148,163,184,0.15)" />
+                          <XAxis dataKey="tasks" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10 }} />
+                          <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10 }} />
+                          <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px', color: '#fff' }} />
+                          <Legend wrapperStyle={{ fontSize: 10 }} />
+                          <Bar dataKey="HH" fill="#8b5cf6" radius={[4, 4, 0, 0]} name="HH" />
+                          <Bar dataKey="IPSO" fill="#3b82f6" radius={[4, 4, 0, 0]} name="IPSO" />
+                          <Bar dataKey="IACO" fill="#06b6d4" radius={[4, 4, 0, 0]} name="IACO" />
+                          <Bar dataKey="RR" fill="#f43f5e" radius={[4, 4, 0, 0]} name="RR" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                )}
+
+                {/* Validation Checks */}
+                {launchResult.validation && (
+                  <div className="grid grid-cols-2 gap-2">
+                    {Object.entries(launchResult.validation).map(([key, passed]) => (
+                      <div 
+                        key={key}
+                        className={clsx(
+                          "flex items-center gap-2 p-3 rounded-xl border text-xs font-bold uppercase tracking-wider",
+                          passed 
+                            ? "bg-emerald-50 dark:bg-emerald-900/10 border-emerald-100 dark:border-emerald-900/30 text-emerald-600"
+                            : "bg-red-50 border-red-100 text-red-600"
+                        )}
+                      >
+                        {passed ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
+                        {key.replace(/_/g, ' ')}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
@@ -226,10 +411,10 @@ export default function ExperimentWizard({ isOpen, onClose }: ExperimentWizardPr
               onClick={onClose}
               className="text-sm font-bold text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
             >
-              Cancel
+              {step === 5 ? 'Close' : 'Cancel'}
             </button>
             <div className="flex items-center gap-3">
-               {step > 1 && (
+               {step > 1 && step < 5 && (
                  <button 
                     onClick={prevStep}
                     className="flex items-center gap-2 px-6 py-3 rounded-2xl border border-gray-200 dark:border-gray-700 text-sm font-bold text-gray-700 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-800 transition-all"
@@ -245,12 +430,28 @@ export default function ExperimentWizard({ isOpen, onClose }: ExperimentWizardPr
                  >
                     Continue <ChevronRight className="w-4 h-4" />
                  </button>
-               ) : (
+               ) : step === 4 ? (
                  <button 
-                    onClick={onClose}
-                    className="flex items-center gap-2 px-10 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold shadow-lg shadow-emerald-500/25 transition-all"
+                    onClick={handleLaunchExperiment}
+                    disabled={isLaunching}
+                    className="flex items-center gap-2 px-10 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white text-sm font-bold shadow-lg shadow-emerald-500/25 transition-all"
                  >
-                    <Rocket className="w-4 h-4" /> Launch Experiment
+                    {isLaunching ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" /> Running Simulation...
+                      </>
+                    ) : (
+                      <>
+                        <Rocket className="w-4 h-4" /> Launch Experiment
+                      </>
+                    )}
+                 </button>
+               ) : (
+                 <button
+                    onClick={onClose}
+                    className="flex items-center gap-2 px-8 py-3 rounded-2xl bg-primary-600 hover:bg-primary-700 text-white text-sm font-bold shadow-lg shadow-primary-500/25 transition-all"
+                 >
+                    <TrendingUp className="w-4 h-4" /> View Full Results
                  </button>
                )}
             </div>

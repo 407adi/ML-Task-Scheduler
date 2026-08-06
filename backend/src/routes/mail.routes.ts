@@ -61,6 +61,40 @@ router.get('/drafts', async (req: Request, res: Response, next: NextFunction) =>
 
 /**
  * @swagger
+ * /api/v1/mail/starred:
+ *   get:
+ *     summary: Get starred mails
+ *     tags: [Mail]
+ */
+router.get('/starred', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = (req as any).user.userId;
+    const mails = await mailService.getStarred(userId);
+    successResponse(res, mails);
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * @swagger
+ * /api/v1/mail/trash:
+ *   get:
+ *     summary: Get trash mails
+ *     tags: [Mail]
+ */
+router.get('/trash', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = (req as any).user.userId;
+    const mails = await mailService.getTrash(userId);
+    successResponse(res, mails);
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * @swagger
  * /api/v1/mail/send:
  *   post:
  *     summary: Send a new mail
@@ -90,6 +124,59 @@ router.patch('/:id/read', validateRequest({ body: markReadSchema }), async (req:
     const userId = (req as any).user.userId;
     await mailService.markRead(userId, req.params.id, isRead);
     successResponse(res, { message: 'Mail status updated' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * @swagger
+ * /api/v1/mail/{id}/star:
+ *   patch:
+ *     summary: Toggle star status
+ *     tags: [Mail]
+ */
+router.patch('/:id/star', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { isStarred } = req.body;
+    const userId = (req as any).user.userId;
+    await mailService.toggleStar(userId, req.params.id, !!isStarred);
+    successResponse(res, { message: 'Mail star updated' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * @swagger
+ * /api/v1/mail/{id}/label:
+ *   patch:
+ *     summary: Update mail label (e.g. TRASH, INBOX)
+ *     tags: [Mail]
+ */
+router.patch('/:id/label', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { label } = req.body;
+    const userId = (req as any).user.userId;
+    await mailService.updateLabel(userId, req.params.id, label || 'INBOX');
+    successResponse(res, { message: 'Mail label updated' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * @swagger
+ * /api/v1/mail/{id}:
+ *   delete:
+ *     summary: Permanently delete mail
+ *     tags: [Mail]
+ */
+router.delete('/:id', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = (req as any).user.userId;
+    await mailService.deleteMail(userId, req.params.id);
+    successResponse(res, { message: 'Mail deleted' });
   } catch (error) {
     next(error);
   }

@@ -33,6 +33,7 @@ def create_app():
     # Register blueprints
     from routes.predict import predict_bp
     from routes.train import train_bp
+    from routes.datasets import datasets_bp
     from routes.admin import admin_bp
     from routes.health import health_bp
     from routes.simulation import simulation_bp
@@ -40,6 +41,7 @@ def create_app():
     # API endpoints prefixed with /api
     app.register_blueprint(predict_bp, url_prefix='/api')
     app.register_blueprint(train_bp, url_prefix='/api')
+    app.register_blueprint(datasets_bp, url_prefix='/api')
     app.register_blueprint(admin_bp, url_prefix='/api')
     app.register_blueprint(simulation_bp)
     app.register_blueprint(health_bp)

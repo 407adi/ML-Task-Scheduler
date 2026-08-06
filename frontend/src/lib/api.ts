@@ -632,6 +632,27 @@ export const mlApi = {
   getInfo: async (): Promise<any> => {
     const response = await api.get<ApiResponse<any>>('/v1/ml/info');
     return response.data.data;
+  },
+  getDatasets: async (): Promise<{ data: any[]; hardwareProfiles: any[] }> => {
+    const response = await api.get('/v1/ml/datasets');
+    return response.data;
+  },
+  getDataset: async (id: string): Promise<any> => {
+    const response = await api.get(`/v1/ml/datasets/${id}`);
+    return response.data;
+  },
+  uploadDataset: async (data: any): Promise<any> => {
+    const response = await api.post('/v1/ml/datasets/upload', data);
+    return response.data;
+  },
+  trainCustomTrace: async (payload: {
+    datasetId: string;
+    hardwareProfile: string;
+    epochs?: number;
+    learningRate?: number;
+  }): Promise<any> => {
+    const response = await api.post('/v1/ml/datasets/train', payload);
+    return response.data;
   }
 };
 
@@ -667,12 +688,32 @@ export const mailApi = {
     const response = await api.get<ApiResponse<any[]>>('/v1/mail/drafts');
     return response.data.data;
   },
+  getStarred: async (): Promise<any[]> => {
+    const response = await api.get<ApiResponse<any[]>>('/v1/mail/starred');
+    return response.data.data;
+  },
+  getTrash: async (): Promise<any[]> => {
+    const response = await api.get<ApiResponse<any[]>>('/v1/mail/trash');
+    return response.data.data;
+  },
   send: async (data: { recipients: string[]; subject: string; content: string }): Promise<any> => {
     const response = await api.post<ApiResponse<any>>('/v1/mail/send', data);
     return response.data.data;
   },
   markRead: async (id: string, isRead: boolean): Promise<any> => {
     const response = await api.patch<ApiResponse<any>>(`/v1/mail/${id}/read`, { isRead });
+    return response.data.data;
+  },
+  toggleStar: async (id: string, isStarred: boolean): Promise<any> => {
+    const response = await api.patch<ApiResponse<any>>(`/v1/mail/${id}/star`, { isStarred });
+    return response.data.data;
+  },
+  updateLabel: async (id: string, label: string): Promise<any> => {
+    const response = await api.patch<ApiResponse<any>>(`/v1/mail/${id}/label`, { label });
+    return response.data.data;
+  },
+  delete: async (id: string): Promise<any> => {
+    const response = await api.delete<ApiResponse<any>>(`/v1/mail/${id}`);
     return response.data.data;
   }
 };

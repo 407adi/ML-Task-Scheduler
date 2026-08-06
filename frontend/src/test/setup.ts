@@ -1,13 +1,19 @@
+import * as React from 'react';
 import { vi } from 'vitest';
 import '@testing-library/jest-dom';
 
-vi.mock('react', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('react')>();
-  return {
-    ...actual,
-    useOptimistic: (actual as any).useOptimistic || ((passthrough: any) => [passthrough, () => {}]),
-  };
-});
+// Mock react-router-dom for React 18 test environment
+vi.mock('react-router-dom', () => ({
+  BrowserRouter: ({ children }: { children: React.ReactNode }) => children,
+  MemoryRouter: ({ children }: { children: React.ReactNode }) => children,
+  Link: ({ to, children, ...props }: any) => React.createElement('a', { href: to, ...props }, children),
+  NavLink: ({ to, children, ...props }: any) => React.createElement('a', { href: to, ...props }, children),
+  useNavigate: () => vi.fn(),
+  useLocation: () => ({ pathname: '/', search: '', hash: '', state: null, key: 'default' }),
+  useParams: () => ({}),
+  useSearchParams: () => [new URLSearchParams(), vi.fn()],
+  Outlet: () => null,
+}));
 
 // Mock window.matchMedia
 Object.defineProperty(window, 'matchMedia', {
@@ -38,7 +44,4 @@ globalThis.ResizeObserver = class {
   observe = vi.fn();
   unobserve = vi.fn();
   disconnect = vi.fn();
-} as any;
-
-// Suppress console errors during tests (optional)
-// vi.spyOn(console, 'error').mockImplementation(() => {});
+};

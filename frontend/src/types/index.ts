@@ -2,11 +2,12 @@
 export interface Task {
   id: string;
   name: string;
-  type: 'CPU' | 'IO' | 'MIXED';
+  type: 'CPU' | 'IO' | 'MIXED' | 'GPU' | 'MEMORY' | 'NETWORK';
   size: 'SMALL' | 'MEDIUM' | 'LARGE';
   priority: number;
   status: 'PENDING' | 'SCHEDULED' | 'RUNNING' | 'COMPLETED' | 'FAILED';
   dueDate: string | null;
+  duration?: number | null;
   predictedTime: number | null;
   actualTime: number | null;
   resourceId: string | null;
@@ -19,7 +20,7 @@ export interface Task {
 
 export interface CreateTaskInput {
   name: string;
-  type: 'CPU' | 'IO' | 'MIXED';
+  type: 'CPU' | 'IO' | 'MIXED' | 'GPU' | 'MEMORY' | 'NETWORK';
   size: 'SMALL' | 'MEDIUM' | 'LARGE';
   priority: number;
   dueDate?: string | null;
@@ -178,6 +179,7 @@ export interface MailMessage {
   content: string;
   isRead: boolean;
   isStarred: boolean;
+  label?: string;
   createdAt: string;
   sender: Pick<User, 'id' | 'name' | 'email'>;
   attachments?: any[];

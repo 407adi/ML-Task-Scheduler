@@ -22,7 +22,7 @@ class PDFService {
       this.getTaskStats()
     ]);
 
-    const doc = new PDFDocument({ margin: 50 });
+    const doc = new PDFDocument({ margin: 50, bufferPages: true });
     const buffers: Buffer[] = [];
 
     doc.on('data', (chunk: Buffer) => buffers.push(chunk));
@@ -122,12 +122,14 @@ class PDFService {
       );
     }
 
-    doc.end();
-
-    return new Promise((resolve) => {
+    return new Promise<Buffer>((resolve, reject) => {
       doc.on('end', () => {
         resolve(Buffer.concat(buffers));
       });
+      doc.on('error', (err: any) => {
+        reject(err);
+      });
+      doc.end();
     });
   }
 

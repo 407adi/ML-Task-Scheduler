@@ -9,7 +9,7 @@ if (!JWT_SECRET) {
   throw new Error('JWT_SECRET environment variable is required');
 }
 
-const DEMO_ENABLED = process.env.NODE_ENV !== 'production' || process.env.DEMO_MODE === 'true';
+const DEMO_ENABLED = (process.env.NODE_ENV !== 'production' && process.env.NODE_ENV !== 'test') || process.env.DEMO_MODE === 'true';
 
 // JwtPayload interface now imported from token.utils
 

@@ -14,9 +14,10 @@ import {
   AreaChart,
   Area,
 } from 'recharts';
-import { Beaker, Play, Download, CheckCircle, XCircle, Loader2, Zap, Shield, Clock, FileJson, Info, ExternalLink, BarChart2, MoreVertical, Settings, Plus } from 'lucide-react';
+import { Beaker, Play, Download, CheckCircle, XCircle, Loader2, Zap, Shield, Clock, FileJson, Info, ExternalLink, BarChart2, MoreVertical, Settings, Plus, Database } from 'lucide-react';
 import { clsx } from 'clsx';
 import ExperimentWizard from '../components/ExperimentWizard';
+import CustomDatasetTrainerModal from '../components/CustomDatasetTrainerModal';
 
 const ALGO_COLORS: Record<string, string> = {
   HH: '#8b5cf6',
@@ -34,6 +35,7 @@ export default function Experiments() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<ExperimentResult | null>(null);
   const [showWizard, setShowWizard] = useState(false);
+  const [showTraceModal, setShowTraceModal] = useState(false);
   const [selectedExperiment, setSelectedExperiment] = useState<ExperimentType>('all');
   const [iterations, setIterations] = useState(3);
   const [error, setError] = useState<string | null>(null);
@@ -112,6 +114,14 @@ export default function Experiments() {
         </div>
         
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowTraceModal(true)}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-purple-200 dark:border-purple-800/40 bg-purple-50 dark:bg-purple-950/30 text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/40 text-sm font-bold transition-all shadow-sm active:scale-95 cursor-pointer"
+          >
+            <Database className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+            Custom Traces & Hardware
+          </button>
+
           <button
             onClick={() => setShowWizard(true)}
             className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary-600 hover:bg-primary-700 text-white text-sm font-bold transition-all shadow-lg shadow-primary-500/20 active:scale-95"
@@ -193,7 +203,14 @@ export default function Experiments() {
         </div>
       )}
 
-      <ExperimentWizard isOpen={showWizard} onClose={() => setShowWizard(false)} />
+      <ExperimentWizard 
+        isOpen={showWizard} 
+        onClose={() => setShowWizard(false)}
+        onExperimentComplete={(data) => {
+          setResult(data);
+          setShowWizard(false);
+        }}
+      />
 
 
       {/* ── CONTROLS ── */}
@@ -422,9 +439,11 @@ export default function Experiments() {
          </div>
        </div>
 
-      <ExperimentWizard 
-        isOpen={showWizard} 
-        onClose={() => setShowWizard(false)} 
+
+
+      <CustomDatasetTrainerModal
+        isOpen={showTraceModal}
+        onClose={() => setShowTraceModal(false)}
       />
     </div>
   );

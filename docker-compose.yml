@@ -87,6 +87,7 @@ services:
       ML_SERVICE_URL: http://ml-service:5001
       CORS_ORIGIN: http://localhost:3000
       REDIS_URL: redis://redis:6379
+      ML_API_KEY: ${ML_API_KEY:-development_key}
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set in your environment}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
@@ -138,7 +139,7 @@ services:
       PORT: 5001
       FLASK_ENV: ${FLASK_ENV:-development}
       DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-password}@db:5432/${DB_NAME:-task_scheduler}?schema=public&connection_limit=5
-      ML_API_KEY: ${ML_API_KEY:-}
+      ML_API_KEY: ${ML_API_KEY:-development_key}
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:5001/api/health || exit 1"]
       interval: 10s

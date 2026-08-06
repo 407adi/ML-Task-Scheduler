@@ -470,6 +470,69 @@ export class MLService {
       return null;
     }
   }
+
+  /**
+   * List available trace datasets and hardware profiles
+   */
+  async getDatasets(): Promise<any> {
+    try {
+      const response = await axios.get(`${this.baseUrl}/api/datasets`, { timeout: 10000 });
+      return response.data;
+    } catch (error) {
+      logger.warn('Failed to fetch datasets from ML service', { error: String(error) });
+      return { success: false, data: [] };
+    }
+  }
+
+  /**
+   * Get dataset details and sample rows
+   */
+  async getDataset(id: string): Promise<any> {
+    try {
+      const response = await axios.get(`${this.baseUrl}/api/datasets/${id}`, { timeout: 10000 });
+      return response.data;
+    } catch (error) {
+      logger.warn(`Failed to fetch dataset ${id} from ML service`, { error: String(error) });
+      return { success: false, error: 'Dataset not found' };
+    }
+  }
+
+  /**
+   * Upload custom workload trace dataset (.csv or .json)
+   */
+  async uploadDataset(data: any): Promise<any> {
+    try {
+      const response = await axios.post(`${this.baseUrl}/api/datasets/upload`, data, {
+        headers: { 'X-API-Key': process.env.ML_API_KEY || 'development_key' },
+        timeout: 20000
+      });
+      return response.data;
+    } catch (error: any) {
+      logger.error('Failed to upload dataset to ML service', { error: String(error) });
+      return { success: false, error: error?.response?.data?.error || error.message };
+    }
+  }
+
+  /**
+   * Train RL scheduler and duration model on custom trace + hardware profile
+   */
+  async trainCustomTrace(payload: {
+    datasetId: string;
+    hardwareProfile: string;
+    epochs?: number;
+    learningRate?: number;
+  }): Promise<any> {
+    try {
+      const response = await axios.post(`${this.baseUrl}/api/datasets/train-custom`, payload, {
+        headers: { 'X-API-Key': process.env.ML_API_KEY || 'development_key' },
+        timeout: 120000
+      });
+      return response.data;
+    } catch (error: any) {
+      logger.error('Custom trace training failed', { error: String(error) });
+      return { success: false, error: error?.response?.data?.error || error.message };
+    }
+  }
 }
 
 export const mlService = new MLService();
