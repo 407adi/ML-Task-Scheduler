@@ -20,20 +20,7 @@ import { useToast } from '../contexts/ToastContext';
 // ── Spline custom element type declaration ──────────────────────────────────
 // spline-viewer is a web component, not a standard HTML tag, so TS/JSX needs
 // to be told about it or it will error / strip props during build.
-declare global {
-  namespace JSX {
-    interface IntrinsicElements {
-      'spline-viewer': React.DetailedHTMLProps<
-        React.HTMLAttributes<HTMLElement>,
-        HTMLElement
-      > & {
-        url?: string;
-        loading?: string;
-        logo?: string;
-      };
-    }
-  }
-}
+
 
 const SPLINE_VIEWER_SRC = 'https://unpkg.com/@splinetool/viewer@1.9.28/build/spline-viewer.js';
 
