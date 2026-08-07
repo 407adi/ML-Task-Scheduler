@@ -37,7 +37,9 @@ export default function Email() {
     toggleMailStar, 
     markMailRead, 
     updateMailLabel, 
-    deleteMail 
+    deleteMail,
+    users,
+    fetchUsers
   } = useStore();
 
   const [activeFolder, setActiveFolder] = useState('inbox');
@@ -50,7 +52,29 @@ export default function Email() {
 
   useEffect(() => {
     fetchMails(activeFolder);
-  }, [activeFolder, fetchMails]);
+    fetchUsers();
+  }, [activeFolder, fetchMails, fetchUsers]);
+
+  const quickContacts = useMemo(() => {
+    const baseContacts = [
+      { name: 'Nova Core', email: 'nova@scheduler.cloud' },
+      { name: 'Sarah Connor (DevOps)', email: 'sarah.dev@nebula.io' },
+      { name: 'Dr. Alex Vance (ML)', email: 'alex.ml@cluster.ai' },
+      { name: 'Cluster Telemetry', email: 'telemetry@fog.internal' },
+    ];
+
+    const registeredContacts = users.map(u => ({
+      name: u.name ? `${u.name} (${u.role})` : u.email,
+      email: u.email
+    }));
+
+    const map = new Map<string, { name: string; email: string }>();
+    [...registeredContacts, ...baseContacts].forEach(c => {
+      if (!map.has(c.email)) map.set(c.email, c);
+    });
+
+    return Array.from(map.values());
+  }, [users]);
 
   const filteredMails = useMemo(() => {
     return mails.filter(m => {
@@ -474,7 +498,7 @@ export default function Email() {
                 />
                 <div className="flex items-center gap-1.5 mt-2 overflow-x-auto no-scrollbar">
                   <span className="text-[10px] text-gray-400 font-bold shrink-0">Quick add:</span>
-                  {QUICK_CONTACTS.map((qc, i) => (
+                  {quickContacts.map((qc, i) => (
                     <button
                       key={i}
                       type="button"

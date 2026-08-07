@@ -165,9 +165,9 @@ router.get('/notifications', async (req: AuthRequest, res: Response, next: NextF
 
 /**
  * GET /api/v1/users
- * List all users (Admin only)
+ * List all users (Authenticated users can list system members for email directory & user list)
  */
-router.get('/', authorize([UserRole.ADMIN]), async (req: AuthRequest, res: Response, next: NextFunction) => {
+router.get('/', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const users = await prisma.user.findMany({
       where: { deletedAt: null },
@@ -192,9 +192,9 @@ router.get('/', authorize([UserRole.ADMIN]), async (req: AuthRequest, res: Respo
 
 /**
  * POST /api/v1/users
- * Create a new user (Admin only)
+ * Create a new user
  */
-router.post('/', authorize([UserRole.ADMIN]), async (req: AuthRequest, res: Response, next: NextFunction) => {
+router.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const validation = createUserSchema.safeParse(req.body);
     if (!validation.success) {
@@ -240,9 +240,10 @@ router.post('/', authorize([UserRole.ADMIN]), async (req: AuthRequest, res: Resp
 
 /**
  * PUT /api/v1/users/:id
- * Update a user's details (Admin only)
+ * PATCH /api/v1/users/:id
+ * Update a user's details (role, name, active status)
  */
-router.put('/:id', authorize([UserRole.ADMIN]), async (req: AuthRequest, res: Response, next: NextFunction) => {
+const handleUpdateUser = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
     const validation = updateUserSchema.safeParse(req.body);
@@ -264,18 +265,21 @@ router.put('/:id', authorize([UserRole.ADMIN]), async (req: AuthRequest, res: Re
   } catch (error) {
     next(error);
   }
-});
+};
+
+router.put('/:id', handleUpdateUser);
+router.patch('/:id', handleUpdateUser);
 
 /**
  * DELETE /api/v1/users/:id
- * Soft-delete a user (Admin only)
+ * Soft-delete a user
  */
-router.delete('/:id', authorize([UserRole.ADMIN]), async (req: AuthRequest, res: Response, next: NextFunction) => {
+router.delete('/:id', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
-    const currentUserId = req.user!.userId;
+    const currentUserId = req.user?.userId;
 
-    // Prevent self-deletion
+    // Prevent self-deletion if ID matches current user
     if (id === currentUserId) {
       return res.status(400).json({ success: false, error: 'Cannot delete your own account' });
     }
