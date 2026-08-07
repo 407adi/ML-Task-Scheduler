@@ -53,13 +53,24 @@ export default function Email() {
   }, [activeFolder, fetchMails]);
 
   const filteredMails = useMemo(() => {
-    return mails.filter(m => 
-      m.subject?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      m.content?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      m.sender?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      m.sender?.email?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [mails, searchTerm]);
+    return mails.filter(m => {
+      const matchesSearch =
+        !searchTerm ||
+        m.subject?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        m.content?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        m.sender?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        m.sender?.email?.toLowerCase().includes(searchTerm.toLowerCase());
+
+      if (!matchesSearch) return false;
+
+      if (activeFolder === 'starred') return m.isStarred;
+      if (activeFolder === 'sent') return m.label === 'SENT' || m.label === 'sent';
+      if (activeFolder === 'drafts') return m.label === 'DRAFT' || m.label === 'drafts';
+      if (activeFolder === 'trash') return m.label === 'TRASH' || m.label === 'trash';
+      // Inbox
+      return m.label === 'INBOX' || m.label === 'inbox' || !m.label;
+    });
+  }, [mails, searchTerm, activeFolder]);
 
   // Auto-select first email if none selected or selection was deleted
   useEffect(() => {

@@ -147,8 +147,16 @@ export default function Chat() {
   const toast = useToast();
 
   const [channels, setChannels] = useState<DemoChannel[]>(() => {
-    const saved = localStorage.getItem('ml_chat_channels');
-    return saved ? JSON.parse(saved) : DEFAULT_CHANNELS;
+    try {
+      const saved = localStorage.getItem('ml_chat_channels');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {
+      // ignore
+    }
+    return DEFAULT_CHANNELS;
   });
 
   const [selectedChannelId, setSelectedChannelId] = useState<string>('nova');

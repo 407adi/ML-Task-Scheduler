@@ -384,98 +384,101 @@ export const useStore = create<AppState>()((set, get) => ({
   fetchMails: async (folder = 'inbox') => {
     const { mailApi } = await import('../lib/api');
     set({ mailLoading: true });
-    try {
-      let mails: any[] = [];
-      if (folder === 'sent') mails = await mailApi.getSent();
-      else if (folder === 'drafts') mails = await mailApi.getDrafts();
-      else if (folder === 'starred') mails = await mailApi.getStarred();
-      else if (folder === 'trash') mails = await mailApi.getTrash();
-      else mails = await mailApi.getInbox();
-
-      // If backend returns empty array for inbox on first visit, supply starter interactive emails
-      if ((!mails || mails.length === 0) && folder === 'inbox') {
-        mails = [
-          {
-            id: 'mail-welcome-1',
-            subject: '🚀 ML Scheduler Optimization Report (+54% Gain)',
-            content: 'Hello Team,\n\nThe Deep Reinforcement Learning optimizer has achieved a 54% efficiency gain over baseline heuristic methods this month.\n\nKey Highlights:\n- Makespan reduced from 124ms to 57ms\n- Fog Node Alpha & Beta load variance stabilized at ±4.2%\n- Zero task deadlines missed across 10,000 synthetic batches.\n\nRecommended Action: Allocate additional compute quotas to GPU-accelerated cuOpt tasks.\n\nBest regards,\nNova Multi-Agent Core',
-            senderId: 'nova-system',
-            sender: { name: 'Nova Core Orchestrator', email: 'nova@scheduler.cloud' },
-            isRead: false,
-            isStarred: true,
-            label: 'INBOX',
-            createdAt: new Date(Date.now() - 3600000).toISOString(),
-            updatedAt: new Date().toISOString()
-          },
-          {
-            id: 'mail-welcome-2',
-            subject: '⚡ Fog Node Cluster Alpha: Auto-scaling Alert',
-            content: 'Notice:\n\nFog Node Cluster Alpha has dynamically provisioned 2 additional virtual worker instances to absorb incoming CPU-intensive workloads.\n\nTelemetry: Load: 42% | Latency: 3.1ms | RTT: 1.8ms.\n\nNo manual intervention required.',
-            senderId: 'fog-monitor',
-            sender: { name: 'Cluster Telemetry Bot', email: 'telemetry@fog.internal' },
-            isRead: true,
-            isStarred: false,
-            label: 'INBOX',
-            createdAt: new Date(Date.now() - 7200000).toISOString(),
-            updatedAt: new Date().toISOString()
-          },
-          {
-            id: 'mail-welcome-3',
-            subject: '🔒 Security Advisory: Certificate Rotation Completed',
-            content: 'All internal TLS/SSL certificates for microservice inter-communication (Backend, ML-Service, Redis) have been successfully rotated.\n\nStatus: Verified and Healthy.',
-            senderId: 'sec-team',
-            sender: { name: 'DevOps Security Team', email: 'security@scheduler.cloud' },
-            isRead: true,
-            isStarred: false,
-            label: 'INBOX',
-            createdAt: new Date(Date.now() - 86400000).toISOString(),
-            updatedAt: new Date().toISOString()
-          }
-        ];
+    
+    const STARTER_MAILS = [
+      {
+        id: 'mail-welcome-1',
+        subject: '🚀 ML Scheduler Optimization Report (+54% Gain)',
+        content: 'Hello Team,\n\nThe Deep Reinforcement Learning optimizer has achieved a 54% efficiency gain over baseline heuristic methods this month.\n\nKey Highlights:\n- Makespan reduced from 124ms to 57ms\n- Fog Node Alpha & Beta load variance stabilized at ±4.2%\n- Zero task deadlines missed across 10,000 synthetic batches.\n\nRecommended Action: Allocate additional compute quotas to GPU-accelerated cuOpt tasks.\n\nBest regards,\nNova Multi-Agent Core',
+        senderId: 'nova-system',
+        sender: { name: 'Nova Core Orchestrator', email: 'nova@scheduler.cloud' },
+        isRead: false,
+        isStarred: true,
+        label: 'INBOX',
+        createdAt: new Date(Date.now() - 3600000).toISOString(),
+        updatedAt: new Date().toISOString()
+      },
+      {
+        id: 'mail-welcome-2',
+        subject: '⚡ Fog Node Cluster Alpha: Auto-scaling Alert',
+        content: 'Notice:\n\nFog Node Cluster Alpha has dynamically provisioned 2 additional virtual worker instances to absorb incoming CPU-intensive workloads.\n\nTelemetry: Load: 42% | Latency: 3.1ms | RTT: 1.8ms.\n\nNo manual intervention required.',
+        senderId: 'fog-monitor',
+        sender: { name: 'Cluster Telemetry Bot', email: 'telemetry@fog.internal' },
+        isRead: true,
+        isStarred: false,
+        label: 'INBOX',
+        createdAt: new Date(Date.now() - 7200000).toISOString(),
+        updatedAt: new Date().toISOString()
+      },
+      {
+        id: 'mail-welcome-3',
+        subject: '🔒 Security Advisory: Certificate Rotation Completed',
+        content: 'All internal TLS/SSL certificates for microservice inter-communication (Backend, ML-Service, Redis) have been successfully rotated.\n\nStatus: Verified and Healthy.',
+        senderId: 'sec-team',
+        sender: { name: 'DevOps Security Team', email: 'security@scheduler.cloud' },
+        isRead: true,
+        isStarred: false,
+        label: 'INBOX',
+        createdAt: new Date(Date.now() - 86400000).toISOString(),
+        updatedAt: new Date().toISOString()
       }
+    ];
 
-      set({ mails: (Array.isArray(mails) ? mails : []).filter(Boolean).map(normalizeMail), mailLoading: false });
+    try {
+      let fetched: any[] = [];
+      if (folder === 'sent') fetched = await mailApi.getSent();
+      else if (folder === 'drafts') fetched = await mailApi.getDrafts();
+      else if (folder === 'starred') fetched = await mailApi.getStarred();
+      else if (folder === 'trash') fetched = await mailApi.getTrash();
+      else fetched = await mailApi.getInbox();
+
+      const normalizedFetched = (Array.isArray(fetched) ? fetched : []).filter(Boolean).map(normalizeMail);
+
+      set((state) => {
+        // Merge fetched mails with existing state mails to avoid wiping out local user sent mails or starter mails
+        const existingMap = new Map(state.mails.map(m => [m.id, m]));
+        normalizedFetched.forEach(m => existingMap.set(m.id, m));
+        
+        let merged = Array.from(existingMap.values());
+        if (merged.length === 0) {
+          merged = STARTER_MAILS.map(normalizeMail);
+        }
+
+        return { mails: merged, mailLoading: false };
+      });
     } catch (error) {
-      console.warn('Mail fetch failed, using local cache:', error);
-      set({ mailLoading: false });
+      console.warn('Mail fetch failed, preserving local state:', error);
+      set((state) => ({
+        mails: state.mails.length > 0 ? state.mails : STARTER_MAILS.map(normalizeMail),
+        mailLoading: false
+      }));
     }
   },
   sendMail: async (data: any) => {
     const { mailApi } = await import('../lib/api');
+    const newMail: MailMessage = normalizeMail({
+      id: `sent-${Date.now()}`,
+      subject: data.subject,
+      content: data.content,
+      senderId: 'current-user',
+      sender: { name: 'You (DevOps Lead)', email: 'me@scheduler.cloud' },
+      isRead: true,
+      isStarred: false,
+      label: 'SENT',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    });
+
     try {
       const sentMail = await mailApi.send(data);
-      // Also optimistic update
-      const newMail: any = normalizeMail(sentMail ?? {
-        id: `sent-${Date.now()}`,
-        subject: data.subject,
-        content: data.content,
-        senderId: 'current-user',
-        sender: { name: 'You (DevOps Lead)', email: 'me@scheduler.cloud' },
-        isRead: true,
-        isStarred: false,
-        label: 'SENT',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      });
+      const finalMail = sentMail ? normalizeMail(sentMail) : newMail;
       set((state) => ({
-        mails: [newMail, ...state.mails.filter(Boolean).map(normalizeMail)]
+        mails: [finalMail, ...state.mails.filter(m => m.id !== finalMail.id)]
       }));
     } catch (error) {
-      // Still store optimistically in local state
-      const newMail: any = normalizeMail({
-        id: `sent-${Date.now()}`,
-        subject: data.subject,
-        content: data.content,
-        senderId: 'current-user',
-        sender: { name: 'You (DevOps Lead)', email: 'me@scheduler.cloud' },
-        isRead: true,
-        isStarred: false,
-        label: 'SENT',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      });
+      // Store optimistically in local state if API call fails
       set((state) => ({
-        mails: [newMail, ...state.mails.filter(Boolean).map(normalizeMail)]
+        mails: [newMail, ...state.mails.filter(m => m.id !== newMail.id)]
       }));
     }
   },
