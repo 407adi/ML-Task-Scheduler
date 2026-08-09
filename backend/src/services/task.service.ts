@@ -208,6 +208,18 @@ export class TaskService {
 
     await redisService.delByPattern('tasks:*');
     
+    // Update the most recent ScheduleHistory with actualTime so ML accuracy can be calculated
+    const latestHistory = await prisma.scheduleHistory.findFirst({
+      where: { taskId },
+      orderBy: { createdAt: 'desc' }
+    });
+    if (latestHistory) {
+      await prisma.scheduleHistory.update({
+        where: { id: latestHistory.id },
+        data: { actualTime }
+      });
+    }
+
     emitToUser(task.userId, 'task:completed', task);
     emitToAll('stats:updated', null);
 
