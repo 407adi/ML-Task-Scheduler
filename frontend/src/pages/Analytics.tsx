@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo, type ChangeEvent, type ComponentType } from 'react';
 import { scheduleApi, metricsApi } from '../lib/api';
 import { useStore } from '../store';
-import type { Resource, Task } from '../types';
+import type { Resource } from '../types';
 import {
   LineChart,
   Line,
