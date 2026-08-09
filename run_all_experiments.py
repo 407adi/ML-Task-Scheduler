@@ -361,9 +361,9 @@ def run_exp02():
     print("  Evaluating Split Conformal Quantiles across Alpha in {0.05, 0.10, 0.20}")
     print("="*80)
     
-    csv_file = Path("ml-service/kaggle_cloud_tasks.csv")
+    csv_file = Path("ml-service/synthetic_cloud_tasks.csv")
     if not csv_file.exists():
-        csv_file = Path("kaggle_cloud_tasks.csv")
+        csv_file = Path("synthetic_cloud_tasks.csv")
         
     df = pd.read_csv(csv_file)
     

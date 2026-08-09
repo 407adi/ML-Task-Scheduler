@@ -51,6 +51,16 @@ export default function CustomDatasetTrainerModal({
   const [trainingProgress, setTrainingProgress] = useState<number>(0);
   const [trainingResult, setTrainingResult] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<'presets' | 'upload' | 'sample'>('presets');
+  
+  const progressIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+      }
+    };
+  }, []);
 
   // Load datasets on open
   useEffect(() => {
@@ -146,7 +156,7 @@ export default function CustomDatasetTrainerModal({
     setTrainingProgress(10);
     setTrainingResult(null);
 
-    const progressInterval = setInterval(() => {
+    progressIntervalRef.current = setInterval(() => {
       setTrainingProgress(prev => (prev < 90 ? prev + 15 : prev));
     }, 400);
 
@@ -158,7 +168,6 @@ export default function CustomDatasetTrainerModal({
         learningRate
       });
 
-      clearInterval(progressInterval);
       setTrainingProgress(100);
 
       if (res.success) {
@@ -169,9 +178,11 @@ export default function CustomDatasetTrainerModal({
         toast.error('Training Failed', res.error || 'Unknown training error.');
       }
     } catch (err: any) {
-      clearInterval(progressInterval);
-      toast.error('Training Error', err.message || 'Could not train custom model.');
+      toast.error('Training Error', err.message || 'An error occurred during training.');
     } finally {
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+      }
       setIsTraining(false);
     }
   };

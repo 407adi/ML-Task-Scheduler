@@ -5,10 +5,11 @@ Supports Random Forest and XGBoost with synthetic training data
 
 import os
 import numpy as np
+import pandas as pd
 import joblib
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor, IsolationForest
+from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import cross_val_score
 from datetime import datetime
 
 # Try to import XGBoost (optional)
@@ -106,10 +107,14 @@ class TaskPredictor:
         self.train(X, y)
     
     def train(self, X, y):
-        """Train the model with provided data using StandardScaler and Conformal Calibration"""
-        # 1. Fit StandardScaler
+        """Train the model with provided data using StandardScaler, proper train/cal split and Conformal Calibration"""
+        # Split data for calibration (80% train, 20% calibration)
+        X_train, X_cal, y_train, y_cal = train_test_split(X, y, test_size=0.2, random_state=42)
+        
+        # 1. Fit StandardScaler on training data only to prevent leakage
         self.scaler = StandardScaler()
-        X_scaled = self.scaler.fit_transform(X)
+        X_train_scaled = self.scaler.fit_transform(X_train)
+        X_cal_scaled = self.scaler.transform(X_cal)
 
         # 2. Create model based on type
         if self.model_type == 'xgboost' and XGBOOST_AVAILABLE:
@@ -144,18 +149,21 @@ class TaskPredictor:
                 n_jobs=-1
             )
         
-        self.model.fit(X_scaled, y)
+        # Train ONLY on the training split
+        self.model.fit(X_train_scaled, y_train)
         
         # 3. Conformal prediction calibration (95% coverage -> alpha = 0.05)
-        preds = self.model.predict(X_scaled)
-        residuals = np.abs(y - preds)
+        # Calculate residuals ONLY on the hold-out calibration set to prevent data leakage
+        preds_cal = self.model.predict(X_cal_scaled)
+        residuals = np.abs(y_cal - preds_cal)
         n = len(residuals)
         alpha = 0.05
         q_level = min(1.0, np.ceil((n + 1) * (1 - alpha)) / n)
         self.calibration_quantile = float(np.quantile(residuals, q_level))
         
-        # Calculate cross-validation score (R^2)
-        cv_scores = cross_val_score(self.model, X_scaled, y, cv=5, scoring='r2')
+        # Calculate cross-validation score (R^2) on full scaled dataset for reporting
+        X_full_scaled = self.scaler.transform(X)
+        cv_scores = cross_val_score(self.model, X_full_scaled, y, cv=5, scoring='r2')
         
         # Update version
         self.version = f"v{datetime.now().strftime('%Y%m%d%H%M%S')}"
@@ -264,13 +272,17 @@ class TaskPredictor:
         lower_bound = max(min_feasible_time, float(predicted_time - self.calibration_quantile))
         upper_bound = float(predicted_time + self.calibration_quantile)
         
-        # 4. Confidence Calculation (Enhanced)
-        confidence = 0.92
-        if resource_load > 92 or resource_load < 5:
-            confidence -= 0.15
-        if task_size == 3 and resource_load > 85:
-            confidence -= 0.10
-        
+        # 4. Confidence Calculation (Derived from model uncertainty)
+        if hasattr(self.model, 'estimators_') and self.model_type == 'random_forest':
+            # Use tree variance for Random Forest
+            tree_preds = np.array([tree.predict(X_scaled) for tree in self.model.estimators_])
+            std_dev = np.std(tree_preds, axis=0)[0]
+            confidence = 1.0 - min(1.0, (std_dev / predicted_time) * 2.0)
+        else:
+            # Fallback to conformal interval width relative to prediction
+            interval_width = upper_bound - lower_bound
+            confidence = 1.0 - min(1.0, interval_width / (2.0 * predicted_time))
+            
         confidence = max(0.1, min(1.0, confidence))
             
         return float(predicted_time), float(confidence), float(lower_bound), float(upper_bound)

@@ -159,6 +159,9 @@ setupMetricsEndpoint(app);
 // ===============================
 import mlRoutes from './routes/ml.routes';
 import chaosRoutes from './routes/chaos.routes';
+import billingRoutes from './routes/billing.routes';
+import connectionsRoutes from './routes/connections.routes';
+import developerRoutes from './routes/developer.routes';
 
 app.use('/api/v1/auth', authRoutes);
 // Backward-compatible alias for auth routes (useful for OAuth callback URL mismatches)
@@ -173,6 +176,9 @@ app.use('/api/v1/devices', deviceRoutes);
 app.use('/api/v1/experiments', experimentsRoutes);
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/ml', mlRoutes);
+app.use('/api/v1/billing', billingRoutes);
+app.use('/api/v1/connections', connectionsRoutes);
+app.use('/api/v1/developer', developerRoutes);
 
 // Optional modules enabled by default (set ENABLE_OPTIONAL_MODULES=false to disable)
 if (process.env.ENABLE_OPTIONAL_MODULES !== 'false') {

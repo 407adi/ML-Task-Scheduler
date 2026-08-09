@@ -16,9 +16,11 @@
 
 ## 📌 Executive Summary
 
-The **Intelligent Task Allocation and Scheduling System** is an enterprise-grade, full-stack distributed platform designed to solve multi-objective, non-deterministic polynomial-time (NP-hard) task scheduling challenges across multi-tiered **Fog-Cloud Computing** architectures.
+The **Intelligent Task Allocation and Scheduling System** is a reproducible fog-computing scheduling simulation platform designed to solve multi-objective, non-deterministic polynomial-time (NP-hard) task scheduling challenges across multi-tiered **Fog-Cloud Computing** architectures.
 
-Bridging the gap between theoretical academic research and high-performance production systems, this project implements and extends the mathematical optimization models established by **Wang & Li (2019)** (*"Task Scheduling Based on a Hybrid Heuristic Algorithm for Smart Production Line with Fog Computing"*, *Sensors*). It integrates **Bio-Inspired Metaheuristic Algorithms** (IPSO, IACO, Hybrid Heuristic), **Deep Reinforcement Learning** (MaskablePPO with Dot-Product Attention Pooling), and **Machine Learning Regressors** (XGBoost, Random Forest, Gradient Boosting) into a reactive, microservices-based operational platform.
+Bridging the gap between theoretical academic research and applied software engineering, this project implements and extends the mathematical optimization models established by **Wang & Li (2019)** (*"Task Scheduling Based on a Hybrid Heuristic Algorithm for Smart Production Line with Fog Computing"*, *Sensors*). It integrates **Bio-Inspired Metaheuristic Algorithms** (IPSO, IACO, Hybrid Heuristic), **Deep Reinforcement Learning** (MaskablePPO with Dot-Product Attention Pooling), and **Machine Learning Regressors** (XGBoost, Random Forest, Gradient Boosting) into a simulation-based operational prototype.
+
+> **Note**: This repository contains synthetic datasets and simulates physical infrastructure (fog nodes, power consumption, network transmission) using mathematically defined delay and energy models.
 
 > **Academic Affiliation**: BITS Pilani Online | BSc Computer Science | Study Project (`BCS ZC241T`)  
 > **Team Byte_hogs**: Shri Srivastava (`2023ebcs593`), Ichha Dwivedi (`2023ebcs125`), Aditi Singh (`2023ebcs498`)  

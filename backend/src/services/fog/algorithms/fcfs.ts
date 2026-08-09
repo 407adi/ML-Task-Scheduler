@@ -7,25 +7,26 @@ export function fcfsSchedule(
   devices: TerminalDevice[]
 ): SchedulingSolution {
   const allocations = new Map<string, string>();
-  const fogNodeLoads = new Map<string, number>();
-  fogNodes.forEach(f => fogNodeLoads.set(f.id, f.currentLoad));
+  const nodeAvailableTimes = new Map<string, number>();
+  
+  fogNodes.forEach(f => nodeAvailableTimes.set(f.id, 0));
 
   for (const task of tasks) {
-    let bestFogNode = fogNodes[0];
-    let minLoad = Infinity;
+    let earliestNode = fogNodes[0];
+    let earliestTime = Infinity;
 
     for (const fogNode of fogNodes) {
-      const currentLoad = fogNodeLoads.get(fogNode.id) || 0;
-      if (currentLoad < minLoad) {
-        minLoad = currentLoad;
-        bestFogNode = fogNode;
+      const availableTime = nodeAvailableTimes.get(fogNode.id) || 0;
+      if (availableTime < earliestTime) {
+        earliestTime = availableTime;
+        earliestNode = fogNode;
       }
     }
 
-    allocations.set(task.id, bestFogNode.id);
+    allocations.set(task.id, earliestNode.id);
     
-    const delay = calculateTotalDelay(task, bestFogNode);
-    fogNodeLoads.set(bestFogNode.id, (fogNodeLoads.get(bestFogNode.id) || 0) + delay * 0.1);
+    const delay = calculateTotalDelay(task, earliestNode);
+    nodeAvailableTimes.set(earliestNode.id, earliestTime + delay);
   }
 
   const result = calculateObjectiveFunction(allocations, tasks, fogNodes, devices);

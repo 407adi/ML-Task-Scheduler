@@ -19,7 +19,7 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from model import TaskPredictor
 
-def evaluate_production_model(data_path="kaggle_cloud_tasks.csv"):
+def evaluate_production_model(data_path="synthetic_cloud_tasks.csv"):
     print("=" * 70)
     print("      INTELLIGENT TASK SCHEDULER — ML EVALUATION REPORT      ")
     print("=" * 70)

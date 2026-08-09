@@ -345,7 +345,8 @@ export default function Calendar() {
       const created = await taskApi.create(payload as any);
       addTask(created);
       toast.success('Task Scheduled', `"${created.name}" added to calendar.`);
-    } catch {
+    } catch (error) {
+      console.warn('Backend unavailable, falling back to local task creation:', error);
       const localTask: Task = {
         id: `cal-task-${Date.now()}`,
         name: newName.trim(),
@@ -402,10 +403,13 @@ export default function Calendar() {
       if (editDueDate) {
         try {
           await calendarApi.updateEvent(selectedTask.id, { startDate: toApiDueDate(editDueDate) || undefined });
-        } catch { /* graceful fallback */ }
+        } catch (error) { 
+          console.warn('Calendar event sync failed (fallback):', error); 
+        }
       }
       toast.success('Updated', `Task "${editName}" updated successfully.`);
-    } catch {
+    } catch (error) {
+      console.warn('Backend unavailable, updating locally:', error);
       toast.info('Updated Locally', `Changes applied to "${editName}".`);
     } finally {
       setIsSavingEdit(false);
@@ -427,10 +431,11 @@ export default function Calendar() {
     try {
       removeTask(taskId);
       await taskApi.delete(taskId);
-      try { await calendarApi.deleteEvent(taskId); } catch { /* ignore */ }
+      try { await calendarApi.deleteEvent(taskId); } catch (error) { console.warn('Calendar event delete failed:', error); }
       toast.success('Deleted', 'Task removed from calendar.');
       setSelectedTask(null);
-    } catch {
+    } catch (error) {
+      console.error('Delete task failed:', error);
       toast.error('Error', 'Could not delete task.');
     }
   };
@@ -442,7 +447,8 @@ export default function Calendar() {
       await runScheduler('ml_enhanced' as any);
       await fetchTasks();
       toast.success('Optimization Complete', 'All pending tasks distributed across optimal schedule windows.');
-    } catch {
+    } catch (error) {
+      console.warn('Auto-schedule failed, falling back to optimistic local distribution:', error);
       // Distribute pending tasks optimistically across this week
       const pending = tasks.filter(t => t.status === 'PENDING' || !t.scheduledAt);
       let dayOffset = 0;

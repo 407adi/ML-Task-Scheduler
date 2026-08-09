@@ -45,18 +45,6 @@ const normalizeMail = (mail: any): MailMessage => ({
   attachments: Array.isArray(mail?.attachments) ? mail.attachments : []
 });
 
-const DEMO_RESOURCES: Resource[] = [
-  { id: 'res-1', name: 'Cloud-Server-1', capacity: 100, currentLoad: 35, status: 'AVAILABLE', layer: 'CLOUD', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), _count: { tasks: 4 } },
-  { id: 'res-2', name: 'Cloud-Server-2', capacity: 100, currentLoad: 60, status: 'AVAILABLE', layer: 'CLOUD', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), _count: { tasks: 6 } },
-  { id: 'res-3', name: 'Fog-Node-A', capacity: 50, currentLoad: 20, status: 'AVAILABLE', layer: 'FOG', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), _count: { tasks: 2 } },
-  { id: 'res-4', name: 'Fog-Node-B', capacity: 50, currentLoad: 45, status: 'AVAILABLE', layer: 'FOG', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), _count: { tasks: 3 } },
-  { id: 'res-5', name: 'Fog-Node-C', capacity: 40, currentLoad: 15, status: 'AVAILABLE', layer: 'FOG', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), _count: { tasks: 1 } },
-  { id: 'res-6', name: 'Edge-Device-1', capacity: 20, currentLoad: 10, status: 'AVAILABLE', layer: 'TERMINAL', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), _count: { tasks: 1 } },
-  { id: 'res-7', name: 'Edge-Device-2', capacity: 20, currentLoad: 80, status: 'BUSY', layer: 'TERMINAL', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), _count: { tasks: 3 } },
-  { id: 'res-8', name: 'Edge-Device-3', capacity: 15, currentLoad: 0, status: 'OFFLINE', layer: 'TERMINAL', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), _count: { tasks: 0 } },
-  { id: 'res-9', name: 'GPU-Node-1', capacity: 80, currentLoad: 50, status: 'AVAILABLE', layer: 'CLOUD', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), _count: { tasks: 5 } },
-  { id: 'res-10', name: 'GPU-Node-2', capacity: 80, currentLoad: 25, status: 'AVAILABLE', layer: 'CLOUD', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), _count: { tasks: 2 } }
-];
 
 interface AppState {
   // Tasks
@@ -183,12 +171,12 @@ export const useStore = create<AppState>()((set, get) => ({
     set({ resourcesLoading: true, error: null });
     try {
       const serverResources = await resourceApi.getAll(status);
-      const resources = (serverResources && serverResources.length > 0) ? serverResources : DEMO_RESOURCES;
+      const resources = serverResources || [];
       set({ resources, resourcesLoading: false });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to fetch resources';
       console.error('Failed to fetch resources:', error);
-      set({ resources: DEMO_RESOURCES, resourcesLoading: false, error: message });
+      set({ resources: [], resourcesLoading: false, error: message });
     }
   },
   addResource: (resource: Resource) =>
@@ -538,7 +526,7 @@ export const useStore = create<AppState>()((set, get) => ({
 
       if (localIds.length > 0) {
         const state = get();
-        const availableResource = state.resources.find((r) => r.status === 'AVAILABLE') || DEMO_RESOURCES[0];
+        const availableResource = state.resources.find((r) => r.status === 'AVAILABLE') || ({ id: 'local-res-1', name: 'Local Resource', capacity: 100, currentLoad: 0, status: 'AVAILABLE', layer: 'FOG', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), _count: { tasks: 0 } } as unknown as Resource);
         const updatedTasks = state.tasks.map((t) => {
           if (localIds.includes(t.id)) {
             return {

@@ -1,9 +1,16 @@
-import { useState } from 'react';
-import { User, Lock, Bookmark, Bell, Link, Upload, AlertTriangle, Check, Trash2, Plus, CreditCard, ChevronRight, Shield, Code, Key, Webhook, Copy, Eye, MoreVertical } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { 
+  User, Lock, Bell, AlertTriangle, Upload, 
+  Bookmark, Link, Code, Plus, CreditCard, Check, 
+  ChevronRight, Trash2, Key, Webhook, Copy, Eye, MoreVertical 
+} from 'lucide-react';
 import { IconBrandGoogle, IconBrandGithub, IconBrandSlack } from '../components/shared/BrandIcons';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
-import { authApi } from '../lib/api';
+import { 
+  authApi, userApi, 
+  billingApi, connectionsApi, developerApi 
+} from '../lib/api';
 import { clsx } from 'clsx';
 import ProgressBar from '../components/shared/ProgressBar';
 
@@ -11,15 +18,12 @@ interface ProfileData {
   firstName: string;
   lastName: string;
   email: string;
-  organization: string;
-  phone: string;
-  address: string;
-  state: string;
-  zipCode: string;
-  country: string;
-  language: string;
-  timezone: string;
-  currency: string;
+}
+
+interface NotificationSettings {
+  emailOnTaskComplete: boolean;
+  emailOnTaskFailed: boolean;
+  emailDailySummary: boolean;
 }
 
 export default function Profile() {
@@ -30,22 +34,107 @@ export default function Profile() {
   const [isSaving, setIsSaving] = useState(false);
   const [confirmDeactivate, setConfirmDeactivate] = useState(false);
   
+  // Account State
   const [profile, setProfile] = useState<ProfileData>({
     firstName: user?.name ? user.name.split(' ')[0] : '',
     lastName: user?.name ? user.name.split(' ').slice(1).join(' ') : '',
     email: user?.email || '',
-    organization: 'Pixinvent',
-    phone: '+1 (917) 543-9876',
-    address: '123 Main St, New York, NY 10001',
-    state: 'New York',
-    zipCode: '10001',
-    country: 'USA',
-    language: 'English',
-    timezone: '(GMT-11:00) International Date Line West',
-    currency: 'USD',
   });
 
-  const handleSave = async () => {
+  // Security State
+  const [passwords, setPasswords] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+
+  // Notifications State
+  const [notificationSettings, setNotificationSettings] = useState<NotificationSettings>({
+    emailOnTaskComplete: true,
+    emailOnTaskFailed: true,
+    emailDailySummary: false
+  });
+
+  // Billing State
+  const [subscription, setSubscription] = useState<any>(null);
+
+  // Connections State
+  const [connections, setConnections] = useState<any[]>([]);
+
+  // Developer State
+  const [apiKeys, setApiKeys] = useState<any[]>([]);
+  const [webhooks, setWebhooks] = useState<any[]>([]);
+  const [newKeyName, setNewKeyName] = useState('');
+  const [newWebhookUrl, setNewWebhookUrl] = useState('');
+  const [newKeyDisplay, setNewKeyDisplay] = useState<string | null>(null);
+
+  // Data Loading
+  useEffect(() => {
+    if (activeTab === 'notifications') loadNotificationSettings();
+    if (activeTab === 'billing') loadSubscription();
+    if (activeTab === 'connections') loadConnections();
+    if (activeTab === 'developer') {
+      loadApiKeys();
+      loadWebhooks();
+    }
+  }, [activeTab]);
+
+  // --- API Methods ---
+  
+  const loadNotificationSettings = async () => {
+    try {
+      const settings = await userApi.getSettings();
+      if (settings) {
+        setNotificationSettings({
+          emailOnTaskComplete: settings.emailOnTaskComplete ?? true,
+          emailOnTaskFailed: settings.emailOnTaskFailed ?? true,
+          emailDailySummary: settings.emailDailySummary ?? false
+        });
+      }
+    } catch (err) {
+      toast.error('Error', 'Failed to load notification settings.');
+    }
+  };
+
+  const loadSubscription = async () => {
+    try {
+      const data = await billingApi.getSubscription();
+      setSubscription(data);
+    } catch (err) {
+      toast.error('Error', 'Failed to load billing details.');
+    }
+  };
+
+  const loadConnections = async () => {
+    try {
+      const data = await connectionsApi.getConnections();
+      setConnections(data);
+    } catch (err) {
+      toast.error('Error', 'Failed to load connections.');
+    }
+  };
+
+  const loadApiKeys = async () => {
+    try {
+      const data = await developerApi.getApiKeys();
+      setApiKeys(data);
+    } catch (err) {
+      toast.error('Error', 'Failed to load API keys.');
+    }
+  };
+
+  const loadWebhooks = async () => {
+    try {
+      const data = await developerApi.getWebhooks();
+      setWebhooks(data);
+    } catch (err) {
+      toast.error('Error', 'Failed to load Webhooks.');
+    }
+  };
+
+  // --- Event Handlers ---
+
+  const handleSaveProfile = async () => {
     setIsSaving(true);
     try {
       await authApi.updateProfile({
@@ -60,13 +149,125 @@ export default function Profile() {
     }
   };
 
-  const handleChange = (field: keyof ProfileData, value: string) => {
-    setProfile(prev => ({ ...prev, [field]: value }));
+  const handleChangePassword = async () => {
+    if (passwords.newPassword !== passwords.confirmPassword) {
+      return toast.error('Error', 'New passwords do not match.');
+    }
+    if (passwords.newPassword.length < 8) {
+      return toast.error('Error', 'Password must be at least 8 characters.');
+    }
+    setIsSaving(true);
+    try {
+      await authApi.changePassword({
+        currentPassword: passwords.currentPassword,
+        newPassword: passwords.newPassword
+      });
+      toast.success('Success', 'Password has been updated.');
+      setPasswords({ currentPassword: '', newPassword: '', confirmPassword: '' });
+    } catch (err: any) {
+      toast.error('Failed', err?.response?.data?.error || 'Failed to change password.');
+    } finally {
+      setIsSaving(false);
+    }
   };
+
+  const handleSaveNotifications = async () => {
+    setIsSaving(true);
+    try {
+      await userApi.updateSettings(notificationSettings);
+      toast.success('Success', 'Notification preferences updated.');
+    } catch (err: any) {
+      toast.error('Failed', 'Could not save notification preferences.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDeactivate = async () => {
+    toast.error('Not Supported', 'Account deactivation is not supported in this environment.');
+    setConfirmDeactivate(false);
+  };
+
+  const handleUpgradePlan = async (planType: 'Standard' | 'Enterprise') => {
+    try {
+      const res = await billingApi.upgradePlan(planType);
+      setSubscription(res);
+      toast.success('Success', `Successfully upgraded to ${planType} plan.`);
+    } catch (err) {
+      toast.error('Upgrade Failed', 'Could not upgrade plan.');
+    }
+  };
+
+  const handleConnect = async (provider: string, accountName: string) => {
+    try {
+      await connectionsApi.addConnection(provider, accountName);
+      toast.success('Connected', `Successfully linked ${provider} account.`);
+      loadConnections();
+    } catch (err) {
+      toast.error('Failed', 'Could not add connection.');
+    }
+  };
+
+  const handleRemoveConnection = async (id: string) => {
+    try {
+      await connectionsApi.removeConnection(id);
+      toast.success('Success', 'Connection removed.');
+      loadConnections();
+    } catch (err) {
+      toast.error('Failed', 'Could not remove connection.');
+    }
+  };
+
+  const handleCreateApiKey = async () => {
+    if (!newKeyName) return toast.error('Error', 'Key name is required.');
+    try {
+      const res = await developerApi.createApiKey(newKeyName);
+      setNewKeyDisplay(res.rawKey);
+      setNewKeyName('');
+      loadApiKeys();
+      toast.success('Success', 'API Key generated. Copy it now, it will not be shown again.');
+    } catch (err) {
+      toast.error('Failed', 'Could not generate API key.');
+    }
+  };
+
+  const handleDeleteApiKey = async (id: string) => {
+    try {
+      await developerApi.deleteApiKey(id);
+      toast.success('Deleted', 'API Key has been revoked.');
+      loadApiKeys();
+    } catch (err) {
+      toast.error('Failed', 'Could not revoke API key.');
+    }
+  };
+
+  const handleCreateWebhook = async () => {
+    if (!newWebhookUrl) return toast.error('Error', 'Endpoint URL is required.');
+    try {
+      await developerApi.createWebhook(newWebhookUrl, ['task.fail', 'node.down']);
+      setNewWebhookUrl('');
+      loadWebhooks();
+      toast.success('Success', 'Webhook registered.');
+    } catch (err: any) {
+      toast.error('Failed', err.response?.data?.error || 'Could not register webhook.');
+    }
+  };
+
+  const handleDeleteWebhook = async (id: string) => {
+    try {
+      await developerApi.deleteWebhook(id);
+      toast.success('Deleted', 'Webhook has been removed.');
+      loadWebhooks();
+    } catch (err) {
+      toast.error('Failed', 'Could not remove webhook.');
+    }
+  };
+
+  // UI Helpers
+  const getConnection = (provider: string) => connections.find(c => c.provider === provider);
 
   return (
     <div className="max-w-6xl mx-auto pb-10">
-      
       {/* ── TABS ── */}
       <div className="flex flex-wrap gap-2 mb-6">
         <TabButton active={activeTab === 'account'} onClick={() => setActiveTab('account')} icon={User} label="Account" />
@@ -102,9 +303,6 @@ export default function Profile() {
                         <Upload className="w-4 h-4" strokeWidth={1.5} />
                         Upload new photo
                       </button>
-                      <button className="btn btn-secondary px-5 py-2.5 text-gray-600 dark:text-gray-300 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 border-none">
-                        Reset
-                      </button>
                     </div>
                     <p className="text-sm text-gray-500 dark:text-gray-400">
                       Allowed JPG, GIF or PNG. Max size of 800K
@@ -117,36 +315,21 @@ export default function Profile() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">First Name</label>
-                    <input type="text" value={profile.firstName} onChange={e => handleChange('firstName', e.target.value)} className="w-full px-3.5 py-2.5 bg-white dark:bg-[#1a2234] border border-gray-300 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 text-gray-900 dark:text-white transition-all outline-none" />
+                    <input type="text" value={profile.firstName} onChange={e => setProfile(p => ({...p, firstName: e.target.value}))} className="w-full px-3.5 py-2.5 bg-white dark:bg-[#1a2234] border border-gray-300 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 text-gray-900 dark:text-white transition-all outline-none" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Last Name</label>
-                    <input type="text" value={profile.lastName} onChange={e => handleChange('lastName', e.target.value)} className="w-full px-3.5 py-2.5 bg-white dark:bg-[#1a2234] border border-gray-300 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 text-gray-900 dark:text-white transition-all outline-none" />
+                    <input type="text" value={profile.lastName} onChange={e => setProfile(p => ({...p, lastName: e.target.value}))} className="w-full px-3.5 py-2.5 bg-white dark:bg-[#1a2234] border border-gray-300 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 text-gray-900 dark:text-white transition-all outline-none" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Email</label>
-                    <input type="email" value={profile.email} onChange={e => handleChange('email', e.target.value)} className="w-full px-3.5 py-2.5 bg-white dark:bg-[#1a2234] border border-gray-300 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 text-gray-900 dark:text-white transition-all outline-none" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Organization</label>
-                    <input type="text" value={profile.organization} onChange={e => handleChange('organization', e.target.value)} className="w-full px-3.5 py-2.5 bg-white dark:bg-[#1a2234] border border-gray-300 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 text-gray-900 dark:text-white transition-all outline-none" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Phone Number</label>
-                    <input type="text" value={profile.phone} onChange={e => handleChange('phone', e.target.value)} className="w-full px-3.5 py-2.5 bg-white dark:bg-[#1a2234] border border-gray-300 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 text-gray-900 dark:text-white transition-all outline-none" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Address</label>
-                    <input type="text" value={profile.address} onChange={e => handleChange('address', e.target.value)} className="w-full px-3.5 py-2.5 bg-white dark:bg-[#1a2234] border border-gray-300 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 text-gray-900 dark:text-white transition-all outline-none" />
+                    <input type="email" value={profile.email} onChange={e => setProfile(p => ({...p, email: e.target.value}))} className="w-full px-3.5 py-2.5 bg-white dark:bg-[#1a2234] border border-gray-300 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 text-gray-900 dark:text-white transition-all outline-none" />
                   </div>
                 </div>
 
                 <div className="mt-8 flex gap-3">
-                  <button onClick={handleSave} disabled={isSaving} className="btn btn-primary px-6 py-2.5 text-sm font-semibold">
+                  <button onClick={handleSaveProfile} disabled={isSaving} className="btn btn-primary px-6 py-2.5 text-sm font-semibold">
                     {isSaving ? 'Saving...' : 'Save changes'}
-                  </button>
-                  <button className="btn btn-secondary px-6 py-2.5 text-sm font-semibold text-gray-600 dark:text-gray-300 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 border-none">
-                    Cancel
                   </button>
                 </div>
               </div>
@@ -168,7 +351,7 @@ export default function Profile() {
                   <input type="checkbox" checked={confirmDeactivate} onChange={(e) => setConfirmDeactivate(e.target.checked)} className="w-5 h-5 rounded border-gray-300 dark:border-gray-600 text-primary-600 focus:ring-primary-500" />
                   <span className="text-sm text-gray-700 dark:text-gray-300">I confirm my account deactivation</span>
                 </label>
-                <button disabled={!confirmDeactivate} className={clsx("btn px-6 py-2.5 text-sm font-semibold transition-all", confirmDeactivate ? "bg-red-500 hover:bg-red-600 text-white shadow-lg shadow-red-500/25 border-none" : "bg-red-500/50 text-white/70 cursor-not-allowed border-none")}>
+                <button onClick={handleDeactivate} disabled={!confirmDeactivate} className={clsx("btn px-6 py-2.5 text-sm font-semibold transition-all", confirmDeactivate ? "bg-red-500 hover:bg-red-600 text-white shadow-lg shadow-red-500/25 border-none" : "bg-red-500/50 text-white/70 cursor-not-allowed border-none")}>
                   Deactivate Account
                 </button>
               </div>
@@ -186,102 +369,24 @@ export default function Profile() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Current Password</label>
-                    <input type="password" placeholder="············" className="w-full px-3.5 py-2.5 bg-white dark:bg-[#1a2234] border border-gray-300 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none" />
+                    <input type="password" value={passwords.currentPassword} onChange={e => setPasswords(p => ({...p, currentPassword: e.target.value}))} placeholder="············" className="w-full px-3.5 py-2.5 bg-white dark:bg-[#1a2234] border border-gray-300 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none" />
                   </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">New Password</label>
-                    <input type="password" placeholder="············" className="w-full px-3.5 py-2.5 bg-white dark:bg-[#1a2234] border border-gray-300 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none" />
+                    <input type="password" value={passwords.newPassword} onChange={e => setPasswords(p => ({...p, newPassword: e.target.value}))} placeholder="············" className="w-full px-3.5 py-2.5 bg-white dark:bg-[#1a2234] border border-gray-300 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Confirm New Password</label>
-                    <input type="password" placeholder="············" className="w-full px-3.5 py-2.5 bg-white dark:bg-[#1a2234] border border-gray-300 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none" />
+                    <input type="password" value={passwords.confirmPassword} onChange={e => setPasswords(p => ({...p, confirmPassword: e.target.value}))} placeholder="············" className="w-full px-3.5 py-2.5 bg-white dark:bg-[#1a2234] border border-gray-300 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none" />
                   </div>
                 </div>
                 <div className="flex gap-3 pt-2">
-                  <button className="btn btn-primary px-6 py-2.5">Save changes</button>
-                  <button className="btn btn-secondary px-6 py-2.5 border-none bg-gray-100 hover:bg-gray-200 dark:bg-gray-800">Reset</button>
+                  <button onClick={handleChangePassword} disabled={isSaving} className="btn btn-primary px-6 py-2.5">
+                    {isSaving ? 'Saving...' : 'Save changes'}
+                  </button>
                 </div>
-              </div>
-            </div>
-
-            <div className="bg-white dark:bg-[#1a2234] rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden p-6 flex flex-col sm:flex-row items-center gap-6">
-               <div className="w-20 h-20 bg-primary-100 dark:bg-primary-900/30 rounded-xl flex items-center justify-center shrink-0">
-                  <Shield className="w-10 h-10 text-primary-600" strokeWidth={1.5} />
-               </div>
-               <div className="flex-1 text-center sm:text-left">
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">Two-step verification</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Keep your account extra secure with a second authentication step.</p>
-               </div>
-               <button className="btn btn-primary px-6">Enable</button>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'billing' && (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2 space-y-6">
-                 <div className="bg-white dark:bg-[#1a2234] rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm p-6">
-                    <div className="flex justify-between items-start mb-6">
-                       <div>
-                          <h3 className="text-lg font-bold text-gray-900 dark:text-white">Current Plan</h3>
-                          <p className="text-sm text-gray-500">Your current subscription details.</p>
-                       </div>
-                       <span className="px-3 py-1 bg-primary-100 dark:bg-primary-900/40 text-primary-600 rounded-lg text-xs font-bold uppercase tracking-wider">Enterprise</span>
-                    </div>
-                    <div className="space-y-4">
-                       <div>
-                          <div className="flex justify-between text-sm mb-1.5">
-                             <span className="font-semibold text-gray-700 dark:text-gray-300">Storage Usage</span>
-                             <span className="font-bold text-gray-900 dark:text-white">75.5 GB / 100 GB</span>
-                          </div>
-                          <ProgressBar value={75.5} color="primary" height={8} />
-                       </div>
-                       <div className="pt-2">
-                          <button className="btn btn-primary px-6">Upgrade Plan</button>
-                       </div>
-                    </div>
-                 </div>
-
-                 <div className="bg-white dark:bg-[#1a2234] rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm">
-                    <div className="p-6 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center">
-                       <h3 className="text-lg font-bold text-gray-900 dark:text-white">Payment Methods</h3>
-                       <button className="btn btn-primary btn-sm flex items-center gap-1"><Plus className="w-4 h-4" /> Add Card</button>
-                    </div>
-                    <div className="p-6 space-y-4">
-                       <div className="flex items-center justify-between p-4 border border-gray-100 dark:border-gray-800 rounded-xl bg-gray-50/50 dark:bg-gray-800/30">
-                          <div className="flex items-center gap-4">
-                             <div className="w-12 h-8 bg-white dark:bg-gray-700 rounded border border-gray-200 dark:border-gray-600 flex items-center justify-center">
-                                <CreditCard className="w-6 h-6 text-gray-400" />
-                             </div>
-                             <div>
-                                <p className="text-sm font-bold text-gray-900 dark:text-white">Visa •••• 4242</p>
-                                <p className="text-xs text-gray-500">Expiry 12/26</p>
-                             </div>
-                          </div>
-                          <span className="text-xs font-bold text-primary-600 bg-primary-50 dark:bg-primary-900/30 px-2 py-1 rounded">Primary</span>
-                       </div>
-                    </div>
-                 </div>
-              </div>
-
-              <div className="space-y-6">
-                 <div className="bg-primary-600 rounded-xl p-6 text-white shadow-xl shadow-primary-500/20">
-                    <h3 className="text-lg font-bold mb-1">Standard Plan</h3>
-                    <p className="text-primary-100 text-sm mb-6">Ideal for growing teams.</p>
-                    <div className="flex items-baseline gap-1 mb-6">
-                       <span className="text-3xl font-bold">$99</span>
-                       <span className="text-primary-200 text-sm">/month</span>
-                    </div>
-                    <ul className="space-y-3 text-sm mb-8">
-                       <li className="flex items-center gap-2"><Check className="w-4 h-4" /> 10 Team Members</li>
-                       <li className="flex items-center gap-2"><Check className="w-4 h-4" /> 500 GB Storage</li>
-                       <li className="flex items-center gap-2"><Check className="w-4 h-4" /> Priority Support</li>
-                    </ul>
-                    <button className="w-full py-2.5 bg-white text-primary-600 font-bold rounded-lg hover:bg-gray-50 transition-colors">Upgrade Plan</button>
-                 </div>
               </div>
             </div>
           </div>
@@ -294,26 +399,75 @@ export default function Profile() {
               <p className="text-sm text-gray-500">Configure how you receive alerts and updates.</p>
             </div>
             <div className="p-6">
-               <table className="w-full text-left">
-                  <thead>
-                    <tr className="text-xs font-bold uppercase tracking-wider text-gray-500 border-b border-gray-100 dark:border-gray-800">
-                       <th className="py-4">Type</th>
-                       <th className="py-4 text-center">Email</th>
-                       <th className="py-4 text-center">Browser</th>
-                       <th className="py-4 text-center">App</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                     <NotificationRow label="New Task Assigned" />
-                     <NotificationRow label="Experiment Completed" />
-                     <NotificationRow label="System Alerts" />
-                     <NotificationRow label="Account Security" />
-                  </tbody>
-               </table>
-               <div className="mt-8 flex gap-3">
-                  <button className="btn btn-primary px-6 py-2.5">Save Changes</button>
-                  <button className="btn btn-secondary px-6 py-2.5 border-none bg-gray-100 hover:bg-gray-200 dark:bg-gray-800">Discard</button>
+               <div className="space-y-4">
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input type="checkbox" checked={notificationSettings.emailOnTaskComplete} onChange={e => setNotificationSettings(s => ({ ...s, emailOnTaskComplete: e.target.checked }))} className="w-5 h-5 rounded border-gray-300 text-primary-600" />
+                    <span className="text-sm text-gray-700 dark:text-gray-300">Email me when a task completes</span>
+                  </label>
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input type="checkbox" checked={notificationSettings.emailOnTaskFailed} onChange={e => setNotificationSettings(s => ({ ...s, emailOnTaskFailed: e.target.checked }))} className="w-5 h-5 rounded border-gray-300 text-primary-600" />
+                    <span className="text-sm text-gray-700 dark:text-gray-300">Email me when a task fails</span>
+                  </label>
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input type="checkbox" checked={notificationSettings.emailDailySummary} onChange={e => setNotificationSettings(s => ({ ...s, emailDailySummary: e.target.checked }))} className="w-5 h-5 rounded border-gray-300 text-primary-600" />
+                    <span className="text-sm text-gray-700 dark:text-gray-300">Send me a daily summary report</span>
+                  </label>
                </div>
+               <div className="mt-8 flex gap-3">
+                  <button onClick={handleSaveNotifications} disabled={isSaving} className="btn btn-primary px-6 py-2.5">
+                    {isSaving ? 'Saving...' : 'Save Changes'}
+                  </button>
+               </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'billing' && subscription && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2 space-y-6">
+                 <div className="bg-white dark:bg-[#1a2234] rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm p-6">
+                    <div className="flex justify-between items-start mb-6">
+                       <div>
+                          <h3 className="text-lg font-bold text-gray-900 dark:text-white">Current Plan</h3>
+                          <p className="text-sm text-gray-500">Your current subscription details.</p>
+                       </div>
+                       <span className="px-3 py-1 bg-primary-100 dark:bg-primary-900/40 text-primary-600 rounded-lg text-xs font-bold uppercase tracking-wider">
+                         {subscription.planType}
+                       </span>
+                    </div>
+                    <div className="space-y-4">
+                       <div>
+                          <div className="flex justify-between text-sm mb-1.5">
+                             <span className="font-semibold text-gray-700 dark:text-gray-300">Storage Usage</span>
+                             <span className="font-bold text-gray-900 dark:text-white">{subscription.storageUsage.toFixed(1)} GB / {subscription.storageLimit} GB</span>
+                          </div>
+                          <ProgressBar value={(subscription.storageUsage / subscription.storageLimit) * 100} color="primary" height={8} />
+                       </div>
+                    </div>
+                 </div>
+              </div>
+
+              <div className="space-y-6">
+                {subscription.planType !== 'Enterprise' && (
+                 <div className="bg-primary-600 rounded-xl p-6 text-white shadow-xl shadow-primary-500/20">
+                    <h3 className="text-lg font-bold mb-1">Enterprise Plan</h3>
+                    <p className="text-primary-100 text-sm mb-6">For advanced research teams.</p>
+                    <div className="flex items-baseline gap-1 mb-6">
+                       <span className="text-3xl font-bold">$299</span>
+                       <span className="text-primary-200 text-sm">/month</span>
+                    </div>
+                    <ul className="space-y-3 text-sm mb-8">
+                       <li className="flex items-center gap-2"><Check className="w-4 h-4" /> Unlimited Members</li>
+                       <li className="flex items-center gap-2"><Check className="w-4 h-4" /> 500 GB Storage</li>
+                       <li className="flex items-center gap-2"><Check className="w-4 h-4" /> 24/7 Priority Support</li>
+                    </ul>
+                    <button onClick={() => handleUpgradePlan('Enterprise')} className="w-full py-2.5 bg-white text-primary-600 font-bold rounded-lg hover:bg-gray-50 transition-colors">
+                      Upgrade to Enterprise
+                    </button>
+                 </div>
+                )}
+              </div>
             </div>
           </div>
         )}
@@ -323,30 +477,34 @@ export default function Profile() {
              <div className="bg-white dark:bg-[#1a2234] rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm">
                 <div className="p-6 border-b border-gray-200 dark:border-gray-800">
                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">Connected Accounts</h3>
-                   <p className="text-sm text-gray-500">Display content from your connected accounts.</p>
+                   <p className="text-sm text-gray-500">Manage external third-party integrations.</p>
                 </div>
                 <div className="p-6 space-y-5">
-                   <ConnectionItem icon={IconBrandGoogle} name="Google" category="Calendar and Contacts" connected />
-                   <ConnectionItem icon={IconBrandSlack} name="Slack" category="Communication" />
-                   <ConnectionItem icon={IconBrandGithub} name="Github" category="Manage Repositories" connected />
-                </div>
-             </div>
-
-             <div className="bg-white dark:bg-[#1a2234] rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm">
-                <div className="p-6 border-b border-gray-200 dark:border-gray-800">
-                   <h3 className="text-lg font-bold text-gray-900 dark:text-white">Social Accounts</h3>
-                   <p className="text-sm text-gray-500">Manage your social profile connections.</p>
-                </div>
-                <div className="p-6 space-y-5">
-                   <ConnectionItem icon={IconBrandGithub} name="Twitter" category="Not Connected" />
-                   <ConnectionItem icon={IconBrandGoogle} name="LinkedIn" category="Connected" connected />
+                   <ConnectionItem 
+                      icon={IconBrandGoogle} name="Google" 
+                      connection={getConnection('Google')} 
+                      onConnect={() => handleConnect('Google', user?.email || 'user@gmail.com')}
+                      onRemove={() => handleRemoveConnection(getConnection('Google').id)}
+                   />
+                   <ConnectionItem 
+                      icon={IconBrandSlack} name="Slack" 
+                      connection={getConnection('Slack')} 
+                      onConnect={() => handleConnect('Slack', 'Research Team Workspace')}
+                      onRemove={() => handleRemoveConnection(getConnection('Slack').id)}
+                   />
+                   <ConnectionItem 
+                      icon={IconBrandGithub} name="Github" 
+                      connection={getConnection('Github')} 
+                      onConnect={() => handleConnect('Github', 'github_researcher')}
+                      onRemove={() => handleRemoveConnection(getConnection('Github').id)}
+                   />
                 </div>
              </div>
           </div>
         )}
 
         {activeTab === 'developer' && (
-          <div className="space-y-6 animate-fade-in-up">
+          <div className="space-y-6">
             {/* API Keys */}
             <div className="bg-white dark:bg-[#1a2234] rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden">
                <div className="p-6 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center">
@@ -354,27 +512,49 @@ export default function Profile() {
                     <h3 className="text-lg font-bold text-gray-900 dark:text-white">API Keys</h3>
                     <p className="text-sm text-gray-500">Manage your secret keys for API access.</p>
                   </div>
-                  <button className="btn btn-primary flex items-center gap-2">
-                    <Plus className="w-4 h-4" /> Create New Key
-                  </button>
                </div>
                <div className="p-6 space-y-4">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-xl gap-4">
-                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center text-primary-600">
-                           <Key className="w-5 h-5" />
-                        </div>
-                        <div>
-                           <p className="text-sm font-bold text-gray-900 dark:text-white">Main Research Key</p>
-                           <p className="text-xs text-gray-500 font-mono">sk_test_••••••••••••••••••••3a2f</p>
-                        </div>
-                     </div>
-                     <div className="flex items-center gap-2">
-                        <button className="p-2 text-gray-400 hover:text-primary-500 transition-colors"><Copy className="w-4 h-4" /></button>
-                        <button className="p-2 text-gray-400 hover:text-primary-500 transition-colors"><Eye className="w-4 h-4" /></button>
-                        <button className="p-2 text-gray-400 hover:text-red-500 transition-colors"><Trash2 className="w-4 h-4" /></button>
-                     </div>
+                  {newKeyDisplay && (
+                    <div className="p-4 mb-4 bg-green-50 text-green-800 border border-green-200 rounded-lg">
+                      <p className="font-bold mb-2">New API Key generated!</p>
+                      <code className="block p-3 bg-white rounded border border-green-200 font-mono text-sm break-all">
+                        {newKeyDisplay}
+                      </code>
+                      <p className="text-sm mt-2">Please copy this key now. It will not be shown again.</p>
+                    </div>
+                  )}
+                  
+                  <div className="flex gap-3 mb-6">
+                    <input 
+                      type="text" 
+                      value={newKeyName} 
+                      onChange={e => setNewKeyName(e.target.value)} 
+                      placeholder="e.g. CI/CD Pipeline Key" 
+                      className="flex-1 px-3.5 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-sm focus:ring-primary-500 outline-none"
+                    />
+                    <button onClick={handleCreateApiKey} className="btn btn-primary flex items-center gap-2 px-4 shrink-0">
+                      <Plus className="w-4 h-4" /> Create Key
+                    </button>
                   </div>
+
+                  {apiKeys.map(key => (
+                    <div key={key.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-xl gap-4">
+                       <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center text-primary-600">
+                             <Key className="w-5 h-5" />
+                          </div>
+                          <div>
+                             <p className="text-sm font-bold text-gray-900 dark:text-white">{key.name}</p>
+                             <p className="text-xs text-gray-500 font-mono">{key.prefix}</p>
+                          </div>
+                       </div>
+                       <div className="flex items-center gap-2">
+                          <button onClick={() => handleDeleteApiKey(key.id)} className="p-2 text-gray-400 hover:text-red-500 transition-colors">
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                       </div>
+                    </div>
+                  ))}
                </div>
             </div>
 
@@ -388,11 +568,21 @@ export default function Profile() {
                     </h3>
                     <p className="text-sm text-gray-500">Receive real-time events on your server.</p>
                   </div>
-                  <button className="btn btn-primary flex items-center gap-2">
-                    <Plus className="w-4 h-4" /> Add Endpoint
-                  </button>
                </div>
                <div className="p-6">
+                  <div className="flex gap-3 mb-6">
+                    <input 
+                      type="text" 
+                      value={newWebhookUrl} 
+                      onChange={e => setNewWebhookUrl(e.target.value)} 
+                      placeholder="https://your-server.com/webhook" 
+                      className="flex-1 px-3.5 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-sm focus:ring-primary-500 outline-none"
+                    />
+                    <button onClick={handleCreateWebhook} className="btn btn-primary flex items-center gap-2 px-4 shrink-0">
+                      <Plus className="w-4 h-4" /> Add Webhook
+                    </button>
+                  </div>
+
                   <div className="border border-gray-100 dark:border-gray-800 rounded-xl overflow-hidden">
                      <table className="w-full text-left text-sm">
                         <thead className="bg-gray-50 dark:bg-gray-800/50">
@@ -404,23 +594,33 @@ export default function Profile() {
                            </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                           <tr className="hover:bg-gray-50/50 dark:hover:bg-gray-800/30">
-                              <td className="px-6 py-4 font-mono text-xs text-primary-600">https://api.lab-research.com/webhooks</td>
-                              <td className="px-6 py-4">
-                                 <div className="flex flex-wrap gap-1">
-                                    <span className="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-[10px] font-bold rounded">task.fail</span>
-                                    <span className="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-[10px] font-bold rounded">node.down</span>
-                                 </div>
-                              </td>
-                              <td className="px-6 py-4">
-                                 <span className="flex items-center gap-1.5 text-emerald-500 font-bold text-xs uppercase tracking-widest">
-                                    <Check className="w-3 h-3" /> Active
-                                 </span>
-                              </td>
-                              <td className="px-6 py-4">
-                                 <button className="text-gray-400 hover:text-primary-500"><MoreVertical className="w-4 h-4" /></button>
-                              </td>
-                           </tr>
+                           {webhooks.map(wh => (
+                             <tr key={wh.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/30">
+                                <td className="px-6 py-4 font-mono text-xs text-primary-600">{wh.endpoint}</td>
+                                <td className="px-6 py-4">
+                                   <div className="flex flex-wrap gap-1">
+                                      {wh.events.map((ev: string) => (
+                                        <span key={ev} className="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-[10px] font-bold rounded">{ev}</span>
+                                      ))}
+                                   </div>
+                                </td>
+                                <td className="px-6 py-4">
+                                   <span className="flex items-center gap-1.5 text-emerald-500 font-bold text-xs uppercase tracking-widest">
+                                      <Check className="w-3 h-3" /> {wh.isActive ? 'Active' : 'Inactive'}
+                                   </span>
+                                </td>
+                                <td className="px-6 py-4">
+                                   <button onClick={() => handleDeleteWebhook(wh.id)} className="text-gray-400 hover:text-red-500">
+                                     <Trash2 className="w-4 h-4" />
+                                   </button>
+                                </td>
+                             </tr>
+                           ))}
+                           {webhooks.length === 0 && (
+                             <tr>
+                               <td colSpan={4} className="px-6 py-4 text-center text-gray-500">No webhooks registered.</td>
+                             </tr>
+                           )}
                         </tbody>
                      </table>
                   </div>
@@ -428,6 +628,7 @@ export default function Profile() {
             </div>
           </div>
         )}
+
       </div>
     </div>
   );
@@ -450,18 +651,7 @@ function TabButton({ active, onClick, icon: Icon, label }: { active: boolean, on
   );
 }
 
-function NotificationRow({ label }: { label: string }) {
-  return (
-    <tr>
-      <td className="py-4 text-sm text-gray-700 dark:text-gray-300 font-medium">{label}</td>
-      <td className="py-4 text-center"><input type="checkbox" defaultChecked className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500" /></td>
-      <td className="py-4 text-center"><input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500" /></td>
-      <td className="py-4 text-center"><input type="checkbox" defaultChecked className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500" /></td>
-    </tr>
-  );
-}
-
-function ConnectionItem({ icon: Icon, name, category, connected = false }: { icon: any, name: string, category: string, connected?: boolean }) {
+function ConnectionItem({ icon: Icon, name, connection, onConnect, onRemove }: { icon: any, name: string, connection?: any, onConnect: () => void, onRemove: () => void }) {
   return (
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-4">
@@ -470,17 +660,17 @@ function ConnectionItem({ icon: Icon, name, category, connected = false }: { ico
         </div>
         <div>
           <p className="text-sm font-bold text-gray-900 dark:text-white">{name}</p>
-          <p className="text-xs text-gray-500">{category}</p>
+          <p className="text-xs text-gray-500">{connection ? `Connected as ${connection.accountName}` : 'Not Connected'}</p>
         </div>
       </div>
       <div className="flex items-center">
-        {connected ? (
-          <button className="p-2 text-gray-400 hover:text-red-500 transition-colors">
+        {connection ? (
+          <button onClick={onRemove} className="p-2 text-gray-400 hover:text-red-500 transition-colors" title="Disconnect">
             <Trash2 className="w-5 h-5" />
           </button>
         ) : (
-          <button className="p-2 text-gray-400 hover:text-primary-500 transition-colors">
-            <ChevronRight className="w-5 h-5" />
+          <button onClick={onConnect} className="p-2 text-gray-400 hover:text-primary-500 transition-colors" title="Connect">
+            <Plus className="w-5 h-5" />
           </button>
         )}
       </div>

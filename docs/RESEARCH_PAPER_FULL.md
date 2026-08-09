@@ -221,7 +221,7 @@ $$P(Y_{N+1} \in C(X_{N+1})) \ge 1 - \alpha$$
 #### 5.1 Experimental Setup
 - **Simulation Hardware:** Intel Core i7 / AMD Ryzen 8-Core Processor, 16 GB DDR4 RAM, Windows 11 / Ubuntu Docker container.
 - **Software Stack:** Python 3.11, PyTorch 2.1, Scikit-learn 1.4, Node.js v20.18, TypeScript 5.4, PostgreSQL 15, Redis 7.2.
-- **Trace Dataset:** $N = 15,002$ real-world execution records from `kaggle_cloud_tasks.csv`.
+- **Trace Dataset:** $N = 15,002$ synthetic execution records generated for simulation `synthetic_cloud_tasks.csv`.
 
 #### 5.2 EXP-01: Multi-Seed Statistical Convergence (30 Independent Seeds)
 
@@ -362,7 +362,7 @@ graph TD
 |:---|:---:|:---|
 | **Code Repository** | ✅ YES | Open-source GitHub repository `shri33/ML-Task-Scheduler` |
 | **Dependencies** | ✅ YES | Locked via `package-lock.json` and `requirements.txt` |
-| **Datasets** | ✅ YES | `ml-service/kaggle_cloud_tasks.csv` ($N=15,002$ records) |
+| **Datasets** | ✅ YES | `ml-service/synthetic_cloud_tasks.csv` ($N=15,002$ records) |
 | **Random Seeds** | ✅ YES | Explicit seeds $s \in [1, 30]$ in Monte Carlo tests |
 | **Experiment Runner** | ✅ YES | `python run_all_experiments.py` |
 | **Dockerized Testbed** | ✅ YES | `docker-compose up -d --build` |

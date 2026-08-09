@@ -70,7 +70,7 @@ def Math_clip(val, min_val, max_val):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate Simulated Kaggle Cloud Task Dataset")
     parser.add_argument("--samples", type=int, default=15000, help="Number of rows to generate")
-    parser.add_argument("--output", type=str, default="kaggle_cloud_tasks.csv", help="Output CSV filename")
+    parser.add_argument("--output", type=str, default="synthetic_cloud_tasks.csv", help="Output CSV filename")
     parser.add_argument("--seed", type=int, default=42, help="Random seed for reproducibility")
     
     args = parser.parse_args()

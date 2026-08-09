@@ -28,14 +28,16 @@ export function useSeed(seed?: number) {
 export function calculateExecutionTime(task: Task, fogNode: FogNode): number {
   const dataSizeBits = task.dataSize * 1e6 * 8; // Convert Mb to bits
   const totalCycles = dataSizeBits * task.computationIntensity;
-  return totalCycles / fogNode.computingResource;
+  const capacity = Math.max(1e-9, fogNode.computingResource);
+  return totalCycles / capacity;
 }
 
 /**
  * Calculate transmission time to send task Ii to fog node Fj
  */
 export function calculateTransmissionTime(task: Task, fogNode: FogNode | CloudNode): number {
-  return fogNode.baseLatency + (task.dataSize / fogNode.networkBandwidth);
+  const bandwidth = Math.max(1e-9, fogNode.networkBandwidth);
+  return fogNode.baseLatency + (task.dataSize / bandwidth);
 }
 
 /**
@@ -97,10 +99,10 @@ export function calculateObjectiveFunction(
     // Hardware constraint penalty (Phase 7 Hardening)
     let hardwarePenalty = 0;
     if (task.memoryRequirement > fogNode.totalMemory) {
-      hardwarePenalty += 1000 * (task.memoryRequirement / fogNode.totalMemory);
+      hardwarePenalty += 1000 * (task.memoryRequirement / Math.max(1e-9, fogNode.totalMemory));
     }
     if (task.vramRequirement > fogNode.totalVram) {
-      hardwarePenalty += 1000 * (task.vramRequirement / fogNode.totalVram);
+      hardwarePenalty += 1000 * (task.vramRequirement / Math.max(1e-9, fogNode.totalVram));
     }
 
     totalDelay += device.delayWeight * delay;

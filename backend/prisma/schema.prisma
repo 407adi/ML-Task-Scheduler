@@ -180,6 +180,12 @@ model User {
   chatMessages      ChatMessage[]
   taskComments      TaskComment[]
 
+  // Profile Features (Billing, Connections, Dev)
+  subscription      Subscription?
+  connections       Connection[]
+  apiKeys           ApiKey[]
+  webhooks          Webhook[]
+
   @@index([email])
   @@index([role, isActive]) // Composite: user management queries
   @@index([deletedAt])
@@ -207,6 +213,57 @@ model NotificationPreference {
   emailDailySummary   Boolean @default(false)
   emailAddress        String?
 }
+
+// ─── Profile System Extensions ──────────────────────────────────────────
+
+model Subscription {
+  id           String   @id @default(uuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  planType     String   @default("Standard") // e.g., "Standard", "Enterprise"
+  storageUsage Float    @default(0)          // in GB
+  storageLimit Float    @default(100)        // in GB
+  updatedAt    DateTime @updatedAt
+}
+
+model Connection {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider   String   // e.g., "Google", "Github", "Slack"
+  accountName String
+  connectedAt DateTime @default(now())
+
+  @@unique([userId, provider])
+}
+
+model ApiKey {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name       String
+  keyHash    String   @unique // Store a hash of the key, not the raw key
+  prefix     String   // E.g. "sk_test_..." (the first few chars to show in UI)
+  lastUsedAt DateTime?
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Webhook {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint   String
+  events     String[] // Array of event strings, e.g. ["task.fail", "node.down"]
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([userId])
+}
+
+// ─── End Profile System Extensions ──────────────────────────────────────────
 
 // ML Model Versioning
 enum ModelStatus {

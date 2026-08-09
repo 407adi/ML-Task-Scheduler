@@ -188,9 +188,6 @@ const api = axios.create({
   timeout: 10000,
 });
 
-const DEMO_MODE_KEY_V1 = 'ml-scheduler-demo-mode';
-const DEMO_MODE_KEY_V2 = 'ml-scheduler-demo-mode-v2';
-const isDemoMode = () => !!localStorage.getItem(DEMO_MODE_KEY_V2) || !!localStorage.getItem(DEMO_MODE_KEY_V1);
 
 // Token management
 let isRefreshing = false;
@@ -262,7 +259,7 @@ api.interceptors.response.use(
     const skipRefreshPaths = ['/v1/auth/me', '/v1/auth/refresh', '/v1/auth/login', '/v1/auth/register'];
     const shouldSkipRefresh = skipRefreshPaths.some(p => requestUrl.includes(p));
 
-    if (error.response?.status === 401 && !originalRequest._retry && !shouldSkipRefresh && !isDemoMode()) {
+    if (error.response?.status === 401 && !originalRequest._retry && !shouldSkipRefresh) {
       const now = Date.now();
       if (refreshFailedAt && now - refreshFailedAt < REFRESH_RETRY_COOLDOWN_MS) {
         return Promise.reject(error);
@@ -314,6 +311,10 @@ export const authApi = {
   },
   updateProfile: async (data: Partial<AuthUser>): Promise<AuthUser> => {
     const response = await api.patch<ApiResponse<AuthUser>>('/v1/auth/profile', data);
+    return response.data.data;
+  },
+  changePassword: async (data: any): Promise<any> => {
+    const response = await api.put<ApiResponse<any>>('/v1/auth/password', data);
     return response.data.data;
   },
 };
@@ -598,6 +599,64 @@ export const userApi = {
   },
   delete: async (id: string): Promise<void> => {
     await api.delete(`/v1/users/${id}`);
+  },
+  getSettings: async (): Promise<any> => {
+    const response = await api.get<ApiResponse<any>>('/v1/users/settings');
+    return response.data.data;
+  },
+  updateSettings: async (data: any): Promise<any> => {
+    const response = await api.patch<ApiResponse<any>>('/v1/users/settings', data);
+    return response.data.data;
+  }
+};
+
+export const billingApi = {
+  getSubscription: async (): Promise<any> => {
+    const response = await api.get<ApiResponse<any>>('/v1/billing');
+    return response.data.data;
+  },
+  upgradePlan: async (planType: 'Standard' | 'Enterprise'): Promise<any> => {
+    const response = await api.post<ApiResponse<any>>('/v1/billing/upgrade', { planType });
+    return response.data.data;
+  }
+};
+
+export const connectionsApi = {
+  getConnections: async (): Promise<any[]> => {
+    const response = await api.get<ApiResponse<any[]>>('/v1/connections');
+    return response.data.data;
+  },
+  addConnection: async (provider: string, accountName: string): Promise<any> => {
+    const response = await api.post<ApiResponse<any>>('/v1/connections', { provider, accountName });
+    return response.data.data;
+  },
+  removeConnection: async (id: string): Promise<void> => {
+    await api.delete(`/v1/connections/${id}`);
+  }
+};
+
+export const developerApi = {
+  getApiKeys: async (): Promise<any[]> => {
+    const response = await api.get<ApiResponse<any[]>>('/v1/developer/apikeys');
+    return response.data.data;
+  },
+  createApiKey: async (name: string): Promise<any> => {
+    const response = await api.post<ApiResponse<any>>('/v1/developer/apikeys', { name });
+    return response.data.data;
+  },
+  deleteApiKey: async (id: string): Promise<void> => {
+    await api.delete(`/v1/developer/apikeys/${id}`);
+  },
+  getWebhooks: async (): Promise<any[]> => {
+    const response = await api.get<ApiResponse<any[]>>('/v1/developer/webhooks');
+    return response.data.data;
+  },
+  createWebhook: async (endpoint: string, events: string[]): Promise<any> => {
+    const response = await api.post<ApiResponse<any>>('/v1/developer/webhooks', { endpoint, events });
+    return response.data.data;
+  },
+  deleteWebhook: async (id: string): Promise<void> => {
+    await api.delete(`/v1/developer/webhooks/${id}`);
   }
 };
 
