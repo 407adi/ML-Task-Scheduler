@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { 
   User, Lock, Bell, AlertTriangle, Upload, 
-  Bookmark, Link, Code, Plus, CreditCard, Check, 
-  ChevronRight, Trash2, Key, Webhook, Copy, Eye, MoreVertical 
+  Bookmark, Link, Code, Plus, Check, 
+  Trash2, Key, Webhook 
 } from 'lucide-react';
 import { IconBrandGoogle, IconBrandGithub, IconBrandSlack } from '../components/shared/BrandIcons';
 import { useAuth } from '../contexts/AuthContext';
