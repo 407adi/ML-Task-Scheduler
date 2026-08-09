@@ -34,7 +34,7 @@ export class TaskService {
   async findAll(status?: TaskStatus, options?: { page?: number; limit?: number }, userId?: string) {
     await chaosService.applyChaos('database');
     const page = Math.max(options?.page || 1, 1);
-    const limit = Math.min(Math.max(options?.limit || 20, 1), 100);
+    const limit = Math.min(Math.max(options?.limit || 1000, 1), 1000);
     const skip = (page - 1) * limit;
 
     const cacheKey = `tasks:all:${status || 'any'}:${userId || 'anon'}:${page}:${limit}`;
@@ -63,8 +63,8 @@ export class TaskService {
           }
         },
         orderBy: [
-          { priority: 'desc' },
-          { createdAt: 'asc' }
+          { createdAt: 'desc' },
+          { priority: 'desc' }
         ],
         skip,
         take: limit

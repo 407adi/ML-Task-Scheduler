@@ -73,7 +73,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
     const userId = (req as AuthRequest).user?.userId;
     const status = req.query.status as TaskStatus | undefined;
     const page = req.query.page ? parseInt(req.query.page as string, 10) : 1;
-    const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 20;
+    const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 1000;
     
     // In a real multi-tenant system, we should pass userId to findAll.
     // For now we assume findAll inside task.service has been updated, or we update it next.
