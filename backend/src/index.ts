@@ -305,6 +305,21 @@ async function startServer() {
           await prisma.$queryRaw`SELECT 1`;
           dbConnected = true;
           logger.info('Database connected successfully');
+          
+          // Ensure demo user exists for DEMO_MODE to prevent foreign key errors
+          if ((process.env.NODE_ENV !== 'production' && process.env.NODE_ENV !== 'test') || process.env.DEMO_MODE === 'true') {
+            await prisma.user.upsert({
+              where: { id: 'demo-user-001' },
+              update: {},
+              create: {
+                id: 'demo-user-001',
+                email: 'demo@example.com',
+                password: 'hashed-password',
+                name: 'Demo User',
+                role: 'ADMIN',
+              }
+            }).catch(e => logger.warn('Failed to upsert demo user', { error: e.message }));
+          }
         } catch (dbError) {
           if (env.NODE_ENV !== 'production' || process.env.DEMO_MODE === 'true') {
             dbConnected = true;
