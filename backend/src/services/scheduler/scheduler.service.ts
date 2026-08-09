@@ -127,6 +127,10 @@ export class SchedulerService {
       const latencyMs = Date.now() - startTime;
       logger.info(`Scheduling completed: ${scheduleResults.length} tasks in ${latencyMs}ms using ${algorithm}`);
 
+      // Clear cache so UI reflects scheduled status immediately
+      const { redisService } = await import('../../services/redis.service');
+      await redisService.delByPattern('tasks:*');
+
       return scheduleResults;
     });
 
