@@ -22,7 +22,7 @@ Bridging the gap between theoretical academic research and applied software engi
 
 > **Note**: This repository contains synthetic datasets and simulates physical infrastructure (fog nodes, power consumption, network transmission) using mathematically defined delay and energy models.
 
-> **Academic Affiliation**: BITS Pilani Online | BSc Computer Science | Study Project (`BCS ZC241T`)  
+> **Academic Affiliation**: BITS Pilani | BSc Computer Science 
 > **Team Byte_hogs**: Shri Srivastava (`2023ebcs593`), Ichha Dwivedi (`2023ebcs125`), Aditi Singh (`2023ebcs498`)  
 > **Project Advisor / Supervisor**: Swapnil Saurav
 > **Demo - https://youtu.be/-FzRKRH-U_w
