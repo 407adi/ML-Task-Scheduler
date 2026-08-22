@@ -41,8 +41,11 @@ def generate_kaggle_like_dataset(n_samples: int = 10000, seed: int = 42) -> pd.D
     # If load goes above 80%, execution time spikes non-linearly
     load_penalty = 1.0 + (resource_load / 100.0) ** 2.5 * 3.0
 
+    # 5. Startup Overhead (0.1 to 10.0s)
+    startup_overhead = rng.uniform(0.1, 10.0, size=n_samples)
+
     # Base predicted time
-    ideal_time = t_base * type_mod * pri_mod * load_penalty
+    ideal_time = (t_base * type_mod * pri_mod * load_penalty) + startup_overhead
 
     # Add realistic heteroscedastic noise (variation grows with task duration)
     # Lognormal distribution mimics the right-skewed nature of execution times
@@ -59,6 +62,7 @@ def generate_kaggle_like_dataset(n_samples: int = 10000, seed: int = 42) -> pd.D
         "taskType": task_type,
         "priority": priority,
         "resourceLoad": np.round(resource_load, 2),
+        "startupOverhead": np.round(startup_overhead, 2),
         "actualTime": np.round(actual_time, 3)
     })
 

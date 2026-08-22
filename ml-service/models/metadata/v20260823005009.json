@@ -1,0 +1,71 @@
+{
+  "version": "v20260823005009",
+  "model_type": "random_forest",
+  "trained_at": "2026-08-22T19:20:09.861684Z",
+  "data_source": "synthetic",
+  "data_hash": "41c76eba6e2a",
+  "data_rows": 2000,
+  "dev_rows": 1700,
+  "calibration_split": "80% train / 20% calibration holdout from dev set",
+  "calibration_samples": 340,
+  "test_rows": 300,
+  "k_folds": 5,
+  "seed": 42,
+  "cv_metrics": {
+    "mae": 0.4308073515120784,
+    "rmse": 0.5379574964319309,
+    "r2": 0.9561442045657943
+  },
+  "test_metrics": {
+    "mae": 0.4514955276120914,
+    "rmse": 0.5641521764684349,
+    "r2": 0.9490911760602261,
+    "conformal_quantile_95": 1.0438
+  },
+  "fold_details": [
+    {
+      "fold": 1,
+      "mae": 0.446403387219383,
+      "rmse": 0.554224285842514,
+      "r2": 0.9519173591593306
+    },
+    {
+      "fold": 2,
+      "mae": 0.454656560154823,
+      "rmse": 0.5711356653345542,
+      "r2": 0.9474549015734353
+    },
+    {
+      "fold": 3,
+      "mae": 0.4213523071491642,
+      "rmse": 0.5266614481230205,
+      "r2": 0.9608911535753871
+    },
+    {
+      "fold": 4,
+      "mae": 0.4115367787841753,
+      "rmse": 0.5142407473651159,
+      "r2": 0.9588894147244176
+    },
+    {
+      "fold": 5,
+      "mae": 0.420087724252846,
+      "rmse": 0.5235253354944501,
+      "r2": 0.9615681937964006
+    }
+  ],
+  "feature_importance": {
+    "taskSize": 0.8218,
+    "taskType": 0.0621,
+    "priority": 0.0065,
+    "resourceLoad": 0.0992,
+    "startupOverhead": 0.0103
+  },
+  "features": [
+    "taskSize",
+    "taskType",
+    "priority",
+    "resourceLoad",
+    "startupOverhead"
+  ]
+}

@@ -30,11 +30,10 @@ def evaluate_production_model(data_path="synthetic_cloud_tasks.csv"):
         X, y = predictor._generate_synthetic_data(5000)
     else:
         df = pd.read_csv(data_path)
-        feature_cols = ["taskSize", "taskType", "priority", "resourceLoad"]
-        X_raw = df[feature_cols].values
-        # Append default startupOverhead (1.0s) if missing
-        startup_overhead = np.ones((len(X_raw), 1)) * 1.0
-        X = np.hstack([X_raw, startup_overhead])
+        if "startupOverhead" not in df.columns:
+            df["startupOverhead"] = 1.0
+        feature_cols = ["taskSize", "taskType", "priority", "resourceLoad", "startupOverhead"]
+        X = df[feature_cols].values
         y = df["actualTime"].values
 
     predictor = TaskPredictor()
@@ -45,20 +44,14 @@ def evaluate_production_model(data_path="synthetic_cloud_tasks.csv"):
 
     # Benchmarking Latency & Accuracy
     start_time = time.time()
-    predictions = []
-    lower_bounds = []
-    upper_bounds = []
-    confidences = []
-
-    for row in X:
-        p, c, l, u = predictor.predict(row[0], row[1], row[2], row[3], row[4])
-        predictions.append(p)
-        confidences.append(c)
-        lower_bounds.append(l)
-        upper_bounds.append(u)
-
+    batch_results = predictor.predict_batch(X)
     total_latency_ms = (time.time() - start_time) * 1000
     avg_latency_ms = total_latency_ms / len(y)
+
+    predictions = np.array([r[0] for r in batch_results])
+    confidences = [r[1] for r in batch_results]
+    lower_bounds = np.array([r[2] for r in batch_results])
+    upper_bounds = np.array([r[3] for r in batch_results])
 
     predictions = np.array(predictions)
     lower_bounds = np.array(lower_bounds)

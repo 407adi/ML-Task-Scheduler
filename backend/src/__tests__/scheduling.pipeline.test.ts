@@ -140,6 +140,14 @@ function setupMocksAndRequire(overrides: {
       setJSON: jest.fn().mockResolvedValue(true),
       getClient: jest.fn().mockReturnValue(null),
       isAvailable: jest.fn().mockReturnValue(false),
+      delByPattern: jest.fn().mockResolvedValue(true),
+    },
+    redisService: {
+      getJSON: jest.fn().mockResolvedValue(null),
+      setJSON: jest.fn().mockResolvedValue(true),
+      getClient: jest.fn().mockReturnValue(null),
+      isAvailable: jest.fn().mockReturnValue(false),
+      delByPattern: jest.fn().mockResolvedValue(true),
     },
   }));
 

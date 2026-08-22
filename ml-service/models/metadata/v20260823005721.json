@@ -1,0 +1,71 @@
+{
+  "version": "v20260823005721",
+  "model_type": "random_forest",
+  "trained_at": "2026-08-22T19:27:21.931175Z",
+  "data_source": "synthetic_cloud_tasks.csv",
+  "data_hash": "8f24dfc875d0",
+  "data_rows": 50000,
+  "dev_rows": 42500,
+  "calibration_split": "80% train / 20% calibration holdout from dev set",
+  "calibration_samples": 8500,
+  "test_rows": 7500,
+  "k_folds": 5,
+  "seed": 42,
+  "cv_metrics": {
+    "mae": 2.140023769464759,
+    "rmse": 3.6238110826056116,
+    "r2": 0.8073433971780208
+  },
+  "test_metrics": {
+    "mae": 2.147527290543196,
+    "rmse": 4.0510789214938425,
+    "r2": 0.7859843216151484,
+    "conformal_quantile_95": 7.1049
+  },
+  "fold_details": [
+    {
+      "fold": 1,
+      "mae": 2.1217328348535633,
+      "rmse": 3.5854298303261385,
+      "r2": 0.7997951395149574
+    },
+    {
+      "fold": 2,
+      "mae": 2.1670975384679565,
+      "rmse": 3.733782733551576,
+      "r2": 0.8046796063810088
+    },
+    {
+      "fold": 3,
+      "mae": 2.1739112886762246,
+      "rmse": 3.6619692234597694,
+      "r2": 0.8083649142911266
+    },
+    {
+      "fold": 4,
+      "mae": 2.1217497174465363,
+      "rmse": 3.520841204353005,
+      "r2": 0.8090938645429074
+    },
+    {
+      "fold": 5,
+      "mae": 2.1156274678795137,
+      "rmse": 3.6170324213375684,
+      "r2": 0.8147834611601041
+    }
+  ],
+  "feature_importance": {
+    "taskSize": 0.6314,
+    "taskType": 0.0632,
+    "priority": 0.0291,
+    "resourceLoad": 0.0954,
+    "startupOverhead": 0.1808
+  },
+  "features": [
+    "taskSize",
+    "taskType",
+    "priority",
+    "resourceLoad",
+    "startupOverhead"
+  ]
+}

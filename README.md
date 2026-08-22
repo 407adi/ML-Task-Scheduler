@@ -56,7 +56,7 @@ Bridging the gap between theoretical academic research and applied software engi
   - [Deep Reinforcement Learning (MaskablePPO)](#deep-reinforcement-learning-maskableppo)
   - [Explainability & Conformal Prediction](#explainability--conformal-prediction)
 - [Database Schema (30 Prisma Entities)](#-database-schema-30-prisma-entities)
-- [Enterprise Security Architecture](#-enterprise-security-architecture)
+- [Security Architecture](#-security-architecture)
 - [Observability, Telemetry & Chaos Engineering](#-observability-telemetry--chaos-engineering)
 - [Testing & Quality Assurance Audit Suite](#-testing--quality-assurance-audit-suite)
 - [Cloud Deployment & Kubernetes Infrastructure](#-cloud-deployment--kubernetes-infrastructure)
@@ -69,7 +69,7 @@ Bridging the gap between theoretical academic research and applied software engi
 ## 🌟 Key System Highlights
 
 - **10 Industrial & Research Scheduling Algorithms**: Full implementations of Hybrid Heuristic (IPSO + IACO), IPSO, IACO, ML-Enhanced, RL-PPO (MaskablePPO), Min-Min, Earliest Deadline First (EDF), Shortest Job First (SJF), Round-Robin, and First-Come-First-Served (FCFS).
-- **Sub-15ms ML Inference**: Predictive regression pipeline evaluating task data size, computation intensity, priority, resource load, and startup overhead with $R^2 = 0.9483$.
+- **ML-assisted execution time prediction**: Predictive regression pipeline evaluating task data size, computation intensity, priority, resource load, and startup overhead with $R^2 = 0.9483$.
 - **Deep Reinforcement Learning**: Policy optimization with dynamic dot-product attention pooling trained on 4-tier fog topology environments.
 - **Explainable Decisions & Uncertainty Bounds**: SHAP (SHapley Additive exPlanations) feature attributions and Split Conformal Prediction intervals ($\alpha = 0.10, 90\%$ statistical coverage).
 - **Live Reactive Dashboard (26 Pages, 24 Components)**: Real-time visual network topologies, drag-and-drop Kanban task orchestration, interactive Gantt timelines, node congestion heatmaps, and customizable experiment wizards.
@@ -95,7 +95,7 @@ Bridging the gap between theoretical academic research and applied software engi
 ┌────────────────────────────────────────────────────────────────────────────────────────┐
 │                              APPLICATION GATEWAY & API                                 │
 │   Node.js 20 LTS + Express API Server (TypeScript)                                     │
-│   • 19 Route Modules (70+ REST Endpoints)    • CSRF / Rate Limiters / JWT Auth         │
+│   • comprehensive REST API surface across 21 route modules    • CSRF / Rate Limiters / JWT Auth         │
 │   • 10 Scheduling Algorithm Implementations  • OpenTelemetry Instrumentation          │
 │   Port: 3001                                                                           │
 └───────┬───────────────────┬──────────────────────────────┬─────────────────────┬───────┘
@@ -546,7 +546,7 @@ The database seeder automatically initializes three RBAC user personas:
 
 ## 🔌 Core API Routes & Endpoints (19 Modules)
 
-The Express backend exposes 70+ REST endpoints adhering to standard HTTP semantics:
+The Express backend exposes comprehensive REST API surface across 21 route modules adhering to standard HTTP semantics:
 
 | Module | Route Prefix | Key Endpoints & Capabilities |
 |:---|:---|:---|
@@ -576,13 +576,15 @@ The Express backend exposes 70+ REST endpoints adhering to standard HTTP semanti
 
 ### Model Architecture & Validation Metrics
 
-The ML service provides sub-15ms execution time estimations based on task complexity and dynamic system load:
+The ML service provides fast ML-assisted execution time estimations based on task complexity and dynamic system load:
 
 | Model | Algorithm Family | Optimal Hyperparameters | Validation $R^2$ | Mean Absolute Error (MAE) |
 |:---|:---|:---|:---|:---|
 | **Random Forest (Default)** | Bootstrap Aggregation Ensemble | `n_estimators=250, max_depth=12, min_samples_split=4` | **$0.9483$** | $0.214\text{ s}$ |
 | **XGBoost Regressor** | Gradient Boosted Decision Trees | `n_estimators=300, learning_rate=0.05, max_depth=6` | **$0.9521$** | $0.198\text{ s}$ |
 | **Gradient Boosting** | Sequential Residual Boosting | `n_estimators=200, learning_rate=0.08, max_depth=5` | **$0.9390$** | $0.231\text{ s}$ |
+
+> **Note**: The $R^2$ and MAE values shown above are from a specific evaluation run and may differ from the research paper's canonical experiment.
 
 ### Deep Reinforcement Learning (MaskablePPO)
 
@@ -633,7 +635,7 @@ The PostgreSQL database is organized into 5 relational domains:
 
 ---
 
-## 🔒 Enterprise Security Architecture
+## 🔒 Security Architecture
 
 - **Token Lifecycle**: Short-lived Access Tokens (15 min) paired with single-use Refresh Tokens stored in PostgreSQL and rotated atomically upon every refresh.
 - **Double-Submit CSRF Cookies**: Custom CSRF protection issuing cryptographically secure tokens validated across mutating `POST`, `PUT`, `PATCH`, and `DELETE` requests via `X-CSRF-Token` headers.
@@ -713,11 +715,15 @@ This project was developed as a Final Year Study Project for the **Online Bachel
 
 ### Team Byte_hogs
 
-| Full Name | Student ID | Academic Email | Key Contributions |
+All team members contributed collaboratively across all phases of the project, including research design, mathematical modeling, full-stack implementation, machine learning pipelines, testing, benchmarking, and documentation.
+
+| Full Name | Student ID | Academic Email | Project Role |
 |:---|:---|:---|:---|
-| **Shri Srivastava** | `2023ebcs593` | `2023ebcs593@wilp.bits-pilani.ac.in` | System Architecture, Full-Stack Development, Scheduling Engine, ML Pipeline, DevOps |
-| **Ichha Dwivedi** | `2023ebcs125` | `2023ebcs125@wilp.bits-pilani.ac.in` | Algorithm Implementation (IPSO/IACO), Fog Mathematical Models, Testing & Validation |
-| **Aditi Singh** | `2023ebcs498` | `2023ebcs498@wilp.bits-pilani.ac.in` | Frontend UI/UX Engineering, Analytics Visualizations, Research Benchmarking Suite |
+| **Shri Srivastava** | `2023ebcs593` | `2023ebcs593@wilp.bits-pilani.ac.in` | Team Member / Full-Stack & ML Co-Developer |
+| **Ichha Dwivedi** | `2023ebcs125` | `2023ebcs125@wilp.bits-pilani.ac.in` | Team Member / Full-Stack & ML Co-Developer |
+| **Aditi Singh** | `2023ebcs498` | `2023ebcs498@wilp.bits-pilani.ac.in` | Team Member / Full-Stack & ML Co-Developer |
+
+*Equal contribution across system architecture, algorithm engineering, ML pipeline, frontend/backend development, testing, and academic reporting.*
 
 **Project Supervisor**: **Swapnil Saurav**, Department of Computer Science, BITS Pilani.
 

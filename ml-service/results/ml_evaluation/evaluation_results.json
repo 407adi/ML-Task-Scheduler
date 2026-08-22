@@ -1,0 +1,12 @@
+{
+  "dataset_size": 15000,
+  "model_type": "random_forest",
+  "model_version": "v20260823005009",
+  "mae": 2.8922,
+  "rmse": 5.8477,
+  "r2": 0.344,
+  "conformal_coverage": 0.1427,
+  "avg_interval_width_sec": 2.0877,
+  "avg_inference_latency_ms": 89.0235,
+  "throughput_predictions_per_sec": 11.23
+}

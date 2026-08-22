@@ -33,26 +33,28 @@ All four rigorous empirical experiments specified in the Master Research & Defen
 
 ### Empirical Results Table (Mean $\pm$ StdDev across 30 Runs)
 
-| Workload ($N$) | Algorithm | Makespan ($T_{\text{delay}}$, s) | Terminal Energy ($E$, J) | Success Ratio (%) | Wilcoxon $p$-value (vs HH) | Significance ($\alpha=0.01$) |
+| Workload ($N$) | Algorithm | Total Delay ($T_{\text{delay}}$, s) | Terminal Energy ($E$, J) | Success Ratio (%) | Wilcoxon $p$-value (vs HH) | Significance ($\alpha=0.01$) |
 |:---|:---|:---:|:---:|:---:|:---:|:---:|
 | **$N = 50$** | **FCFS** | $329.42 \pm 62.50$ | $26.00 \pm 4.03$ | $98.60 \pm 1.65$ | $1.863 \times 10^{-9}$ | **Statistically Significant ($p < 0.001$)** |
-| | **RR** | $329.42 \pm 62.50$ | $26.00 \pm 4.03$ | $98.60 \pm 1.65$ | $1.863 \times 10^{-9}$ | **Statistically Significant ($p < 0.001$)** |
+| | **RR** | $255.62 \pm 33.74$ | $24.40 \pm 2.82$ | $99.47 \pm 0.88$ | $1.863 \times 10^{-9}$ | **Statistically Significant ($p < 0.001$)** |
 | | **Min-Min** | $197.72 \pm 27.16$ | $21.97 \pm 2.27$ | $99.87 \pm 0.50$ | $1.863 \times 10^{-9}$ | **Statistically Significant ($p < 0.001$)** |
 | | **IPSO** | $135.50 \pm 16.31$ | $23.25 \pm 1.65$ | $100.00 \pm 0.00$ | $6.666 \times 10^{-4}$ | **Statistically Significant ($p < 0.001$)** |
 | | **IACO** | $132.46 \pm 13.61$ | $23.69 \pm 1.75$ | $100.00 \pm 0.00$ | $4.712 \times 10^{-7}$ | **Statistically Significant ($p < 0.001$)** |
 | | **HH (Ours)** | **$\mathbf{128.39 \pm 12.69}$** | **$23.89 \pm 1.67$** | **$\mathbf{100.00 \pm 0.00}$** | *Reference (Baseline)* | — |
 | **$N = 100$** | **FCFS** | $679.71 \pm 133.41$ | $51.66 \pm 8.35$ | $98.33 \pm 1.56$ | $1.863 \times 10^{-9}$ | **Statistically Significant ($p < 0.001$)** |
+| | **RR** | $497.03 \pm 56.55$ | $48.18 \pm 4.95$ | $99.10 \pm 0.75$ | $1.863 \times 10^{-9}$ | **Statistically Significant ($p < 0.001$)** |
 | | **Min-Min** | $428.33 \pm 42.62$ | $43.77 \pm 3.97$ | $99.40 \pm 0.71$ | $1.863 \times 10^{-9}$ | **Statistically Significant ($p < 0.001$)** |
 | | **IPSO** | $333.84 \pm 37.27$ | $44.42 \pm 2.93$ | $99.90 \pm 0.30$ | $1.863 \times 10^{-9}$ | **Statistically Significant ($p < 0.001$)** |
 | | **IACO** | $281.95 \pm 27.52$ | $46.31 \pm 3.27$ | $99.97 \pm 0.18$ | $6.195 \times 10^{-3}$ | **Statistically Significant ($p < 0.01$)** |
 | | **HH (Ours)** | **$\mathbf{278.68 \pm 28.48}$** | **$46.27 \pm 3.10$** | **$\mathbf{100.00 \pm 0.00}$** | *Reference (Baseline)* | — |
 | **$N = 200$** | **FCFS** | $1355.55 \pm 241.52$ | $103.26 \pm 14.95$ | $98.27 \pm 1.12$ | $1.863 \times 10^{-9}$ | **Statistically Significant ($p < 0.001$)** |
+| | **RR** | $980.32 \pm 100.11$ | $96.24 \pm 8.29$ | $99.32 \pm 0.52$ | $1.863 \times 10^{-9}$ | **Statistically Significant ($p < 0.001$)** |
 | | **Min-Min** | $889.44 \pm 86.28$ | $88.04 \pm 7.19$ | $99.43 \pm 0.63$ | $1.863 \times 10^{-9}$ | **Statistically Significant ($p < 0.001$)** |
 | | **IPSO** | $802.57 \pm 96.30$ | $88.72 \pm 6.65$ | $99.93 \pm 0.17$ | $1.863 \times 10^{-9}$ | **Statistically Significant ($p < 0.001$)** |
 | | **IACO** | $590.83 \pm 54.95$ | $92.33 \pm 5.19$ | $99.92 \pm 0.19$ | $2.449 \times 10^{-1}$ | Near-optimal parity |
 | | **HH (Ours)** | **$\mathbf{588.05 \pm 55.12}$** | **$92.04 \pm 4.83$** | **$\mathbf{99.98 \pm 0.09}$** | *Reference (Baseline)* | — |
 | **$N = 300$** | **FCFS** | $2016.26 \pm 365.85$ | $154.09 \pm 22.74$ | $98.22 \pm 1.15$ | $1.863 \times 10^{-9}$ | **Statistically Significant ($p < 0.001$)** |
-| | **RR** | $2016.26 \pm 365.85$ | $154.09 \pm 22.74$ | $98.22 \pm 1.15$ | $1.863 \times 10^{-9}$ | **Statistically Significant ($p < 0.001$)** |
+| | **RR** | $1449.98 \pm 146.72$ | $143.07 \pm 12.17$ | $99.24 \pm 0.55$ | $1.863 \times 10^{-9}$ | **Statistically Significant ($p < 0.001$)** |
 | | **Min-Min** | $1345.41 \pm 130.51$ | $131.75 \pm 10.84$ | $99.32 \pm 0.51$ | $1.863 \times 10^{-9}$ | **Statistically Significant ($p < 0.001$)** |
 | | **IPSO** | $1314.07 \pm 162.85$ | $133.44 \pm 10.08$ | $99.79 \pm 0.29$ | $1.863 \times 10^{-9}$ | **Statistically Significant ($p < 0.001$)** |
 | | **IACO** | $910.09 \pm 82.64$ | $137.42 \pm 6.98$ | $99.97 \pm 0.10$ | $1.579 \times 10^{-1}$ | Hybrid initialization parity |

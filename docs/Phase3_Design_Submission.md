@@ -14,11 +14,13 @@
 
 ### Team Members
 
-| Name | Student ID | Role |
-|------|------------|------|
-| Shri Srivastava | 2023ebcs593 | Lead Architect / Backend Developer |
-| Ichha Dwivedi | 2023ebcs125 | UI/UX Designer / Frontend Developer |
-| Aditi Singh | 2023ebcs498 | Database Designer / ML & DevOps Lead |
+| Name | Student ID | Academic Email | Role |
+|------|------------|----------------|------|
+| Shri Srivastava | 2023ebcs593 | 2023ebcs593@wilp.bits-pilani.ac.in | Co-Developer (Joint Architecture, ML, Full-Stack) |
+| Ichha Dwivedi | 2023ebcs125 | 2023ebcs125@wilp.bits-pilani.ac.in | Co-Developer (Joint Architecture, ML, Full-Stack) |
+| Aditi Singh | 2023ebcs498 | 2023ebcs498@wilp.bits-pilani.ac.in | Co-Developer (Joint Architecture, ML, Full-Stack) |
+
+*All team members collaborated equally across all architectural, frontend, backend, ML, and database design domains.*
 
 ---
 

@@ -187,10 +187,10 @@ def build_complete_pdf():
         "featuring non-linear exponential inertia weight decay with an Improved Ant Colony Optimization (IACO) enforcing bounded pheromone "
         "evaporation to avoid premature local stagnation. To address dynamic execution uncertainty, we incorporate a Split Conformal Prediction "
         "engine that provides rigorous finite-sample coverage guarantees (1 - α = 90.0%) over tree-based regressors (R² = 0.8508, MAE = 1.013s). "
-        "Rigorous multi-seed empirical experiments across 30 independent runs demonstrate that our proposed Hybrid Heuristic achieves a makespan "
+        "Rigorous multi-seed empirical experiments across 30 independent runs demonstrate that our proposed Hybrid Heuristic achieves a total scheduling delay "
         "of 905.59 ± 84.09s on a 300-task workload, outperforming Min-Min by 32.7% and FCFS by 55.1% (p = 1.863e-09, Wilcoxon signed-rank test). "
-        "The entire architecture is realized as a containerized microservices platform capable of sustaining burst ingestion throughput of "
-        "5,961.6 tasks/s with sub-20ms P99 latencies."
+        "The entire architecture is realized as a containerized microservices platform capable of achieving scheduler benchmark throughput "
+        "ranging from 1,400 to 6,600 tasks/s for workloads of 100–500 tasks (timing the scheduler computation directly)."
     )
     story.append(Paragraph(abstract_text, abstract_style))
     story.append(Paragraph("<b>Keywords:</b> Fog Computing, Task Scheduling, Hybrid Metaheuristics, IPSO, IACO, Split Conformal Prediction, Explainable AI.", body_style))
@@ -210,7 +210,8 @@ def build_complete_pdf():
         "• <i>Transmission Delay:</i> T_Tij = L_j + D_i / B_j<br/>"
         "• <i>Total Delay:</i> T_Dij = T_Tij + T_Eij + S_i<br/>"
         "• <i>Device Energy:</i> E_ij = T_Tij · P_T + T_Eij · P_idle<br/>"
-        "• <i>Global Objective Cost:</i> J(X) = w_delay ∑ T_Dij + w_energy ∑ E_ij + Penalty(Hardware)", body_style
+        "• <i>Global Objective Cost:</i> J(X) = w_delay ∑ T_Dij + w_energy ∑ E_ij + Penalty(Hardware)<br/>"
+        "• <i>Note:</i> The metric reported in our experiments is the aggregate total scheduling delay (sum of per-task delays), distinct from the classical makespan definition (maximum completion time).", body_style
     ))
     
     # PART 2 & 3: ALGORITHMIC METHODOLOGY
@@ -228,9 +229,9 @@ def build_complete_pdf():
     story.append(Paragraph("<b>Table 1: Multi-Seed Statistical Convergence Test (30 Independent Runs, N = 300 Tasks)</b>", h2_style))
     
     t1_data = [
-        ["Algorithm", "Makespan Mean ± Std (s)", "Energy Mean ± Std (J)", "Success Ratio (%)", "Wilcoxon p-value vs HH"],
+        ["Algorithm", "Total Delay Mean ± Std (s)", "Energy Mean ± Std (J)", "Success Ratio (%)", "Wilcoxon p-value vs HH"],
         ["FCFS", "2016.26 ± 365.85 s", "154.09 ± 22.74 J", "98.22 ± 1.15 %", "1.863e-09 (Significant)"],
-        ["Round-Robin", "2016.26 ± 365.85 s", "154.09 ± 22.74 J", "98.22 ± 1.15 %", "1.863e-09 (Significant)"],
+        ["Round-Robin", "1449.98 ± 146.72 s", "143.07 ± 12.17 J", "99.24 ± 0.55 %", "1.863e-09 (Significant)"],
         ["Min-Min", "1345.41 ± 130.51 s", "131.75 ± 10.84 J", "99.32 ± 0.51 %", "1.863e-09 (Significant)"],
         ["IPSO Only", "1314.07 ± 162.85 s", "133.44 ± 10.08 J", "99.79 ± 0.29 %", "1.863e-09 (Significant)"],
         ["IACO Only", "910.09 ± 82.64 s", "137.42 ± 6.98 J", "99.97 ± 0.10 %", "0.1579 (Parity)"],

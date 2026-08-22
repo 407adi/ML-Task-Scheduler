@@ -13,11 +13,13 @@
 
 ## TEAM MEMBERS
 
-| Name | Roll Number | Role |
-|------|------------|------|
-| Shri | BITS Pilani | Backend Lead (Node.js, API, Scheduler) |
-| Team Byte_hogs Member 2 | BITS Pilani | Frontend Lead (React, UI, Dashboard) |
-| Team Byte_hogs Member 3 | BITS Pilani | ML/DevOps Lead (Python, ML, Deployment) |
+| Name | Student ID | Academic Email | Project Role |
+|------|------------|----------------|--------------|
+| Shri Srivastava | 2023ebcs593 | 2023ebcs593@wilp.bits-pilani.ac.in | Co-Developer (Joint Contribution) |
+| Ichha Dwivedi | 2023ebcs125 | 2023ebcs125@wilp.bits-pilani.ac.in | Co-Developer (Joint Contribution) |
+| Aditi Singh | 2023ebcs498 | 2023ebcs498@wilp.bits-pilani.ac.in | Co-Developer (Joint Contribution) |
+
+*All team members contributed equally and collaboratively across all phases of the project.*
 
 ---
 

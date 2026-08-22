@@ -25,6 +25,8 @@ import userRoutes from './routes/user.routes';
 import chatRoutes from './routes/chat.routes';
 import mailRoutes from './routes/mail.routes';
 import calendarRoutes from './routes/calendar.routes';
+import gpuRoutes from './routes/gpu.routes';
+import simulationRoutes from './routes/simulation.routes';
 import { handleSocketEvents } from './lib/socketHandlers';
 import { errorHandler } from './middleware/errorHandler';
 import { apiLimiter, scheduleLimiter } from './middleware/rateLimit.middleware';
@@ -187,9 +189,11 @@ if (process.env.ENABLE_OPTIONAL_MODULES !== 'false') {
   app.use('/api/v1/chat', chatRoutes);
   app.use('/api/v1/mail', mailRoutes);
   app.use('/api/v1/calendar', calendarRoutes);
-  logger.info('Optional modules registered (Chat, Mail, Calendar, Chaos, AI)');
+  app.use('/api/v1/gpu', gpuRoutes);
+  app.use('/api/v1/simulation', simulationRoutes);
+  logger.info('Optional modules registered (Chat, Mail, Calendar, Chaos, AI, GPU, Simulation)');
 } else {
-  logger.info('Optional modules disabled (Chat, Mail, Calendar, Chaos, AI)');
+  logger.info('Optional modules disabled (Chat, Mail, Calendar, Chaos, AI, GPU, Simulation)');
 }
 
 // Alias: /api/v1/scheduling/compare → fog compare endpoint

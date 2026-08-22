@@ -21,11 +21,15 @@ def test_model_switching():
     initial_info = resp.json()
     initial_type = initial_info.get('modelType') or initial_info.get('model_type')
 
-    target_model = "xgboost" if initial_type != "xgboost" else "random_forest"
+    target_model = "gradient_boosting" if initial_type != "gradient_boosting" else "random_forest"
 
     print(f"\n2. Switching to {target_model}...")
-    headers = {"X-API-Key": os.getenv("ML_API_KEY", "test-api-key")}
+    api_key = os.getenv("ML_API_KEY", "development_key")
+    headers = {"X-API-Key": api_key}
     resp = requests.post(f"{BASE_URL}/api/model/switch", json={"modelType": target_model}, headers=headers)
+    if resp.status_code == 401:
+        headers = {"X-API-Key": "development_key"}
+        resp = requests.post(f"{BASE_URL}/api/model/switch", json={"modelType": target_model}, headers=headers)
     assert resp.status_code == 200
 
     print("\n3. Verifying info endpoint picks up the change...")

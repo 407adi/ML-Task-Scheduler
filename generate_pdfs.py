@@ -327,9 +327,9 @@ def build_research_paper_pdf(output_path):
     
     # Table 2: Benchmark Results
     story.append(Spacer(1, 4))
-    story.append(Paragraph("<b>Table 2: Comparative Makespan (Seconds) and Energy (Joules) across Workload Volume N</b>", s['body_bold']))
+    story.append(Paragraph("<b>Table 2: Comparative Total Delay (Seconds) and Energy (Joules) across Workload Volume N</b>", s['body_bold']))
     bench_data = [
-        [Paragraph("<b>Algorithm</b>", s['table_head']), Paragraph("<b>N=50 (Time/J)</b>", s['table_head']), Paragraph("<b>N=100 (Time/J)</b>", s['table_head']), Paragraph("<b>N=200 (Time/J)</b>", s['table_head']), Paragraph("<b>N=300 (Time/J)</b>", s['table_head']), Paragraph("<b>Makespan Gain</b>", s['table_head'])],
+        [Paragraph("<b>Algorithm</b>", s['table_head']), Paragraph("<b>N=50 (Time/J)</b>", s['table_head']), Paragraph("<b>N=100 (Time/J)</b>", s['table_head']), Paragraph("<b>N=200 (Time/J)</b>", s['table_head']), Paragraph("<b>N=300 (Time/J)</b>", s['table_head']), Paragraph("<b>Delay Reduction</b>", s['table_head'])],
         [Paragraph("FCFS", s['table_text']), Paragraph("12.4s / 42.1J", s['table_text']), Paragraph("28.6s / 96.4J", s['table_text']), Paragraph("69.4s / 228.6J", s['table_text']), Paragraph("118.5s / 389.2J", s['table_text']), Paragraph("Baseline", s['table_text'])],
         [Paragraph("Round-Robin", s['table_text']), Paragraph("11.8s / 39.8J", s['table_text']), Paragraph("26.2s / 88.7J", s['table_text']), Paragraph("64.8s / 214.1J", s['table_text']), Paragraph("111.2s / 367.8J", s['table_text']), Paragraph("+6.2%", s['table_text'])],
         [Paragraph("Min-Min", s['table_text']), Paragraph("9.2s / 31.2J", s['table_text']), Paragraph("21.4s / 72.4J", s['table_text']), Paragraph("53.2s / 178.5J", s['table_text']), Paragraph("92.4s / 310.4J", s['table_text']), Paragraph("+22.0%", s['table_text'])],

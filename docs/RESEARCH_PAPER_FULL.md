@@ -18,7 +18,7 @@ Through source-level code verification across TypeScript (`backend/src/`), Pytho
 3. **Multi-Model ML Inference Pipeline:** Trained Random Forest and XGBoost regressors predicting execution durations $T_E$ from runtime features ($R^2 = 0.8508$, $\text{MAE} = 1.013\text{ s}$).
 4. **Split Conformal Prediction Engine:** Finite-sample statistical coverage guarantee ($1-\alpha$) providing prediction intervals $\hat{y} \pm \hat{q}$ to prevent deadline violations.
 5. **Real-Time Distributed Microservices Architecture:** Node.js/Express backend with Redis/BullMQ asynchronous task queues, PostgreSQL persistence via Prisma ORM, WebSockets for sub-10ms state synchronization, and Prometheus metric exporters.
-6. **Deep Reinforcement Learning Prototype:** Maskable Proximal Policy Optimization (MaskablePPO) with attention pooling over heterogeneous node feature spaces.
+6. **An RL-based scheduling path/baseline:** Maskable Proximal Policy Optimization (MaskablePPO) with attention pooling over heterogeneous node feature spaces.
 
 ### 1.2 The Research Problem
 Classical heuristic scheduling algorithms (e.g., Min-Min, Max-Min, FCFS, Round Robin) fail to navigate multi-dimensional trade-offs between execution delay, radio transmission energy, and deadline adherence in heterogeneous Fog environments. Conversely, pure metaheuristics (PSO, GA, ACO) suffer from slow convergence or entrapment in local optima when applied in real-time streaming contexts without accurate runtime priors.
@@ -29,16 +29,18 @@ Classical heuristic scheduling algorithms (e.g., Min-Min, Max-Min, FCFS, Round R
 3. **Decoupled Execution Pipelines:** Literature frequently proposes scheduling algorithms in isolation without evaluating end-to-end queue ingestion latencies, database transaction overheads, or circuit breaker resilience.
 
 ### 1.4 Main Research Question
-> *Can an integrated framework combining bio-inspired hybrid metaheuristics with conformal-guaranteed machine learning estimators significantly reduce total makespan and terminal energy consumption in heterogeneous fog computing while maintaining formal deadline adherence guarantees and sub-millisecond real-time ingestion scalability?*
+> *Can an integrated framework combining bio-inspired hybrid metaheuristics with conformal-guaranteed machine learning estimators significantly reduce total scheduling delay and terminal energy consumption in heterogeneous fog computing while maintaining formal deadline adherence guarantees and sub-millisecond real-time ingestion scalability?*
+
+> Note: The metric reported in our experiments is the aggregate total scheduling delay (sum of per-task delays across all node assignments), distinct from the classical makespan definition (maximum completion time).
 
 ### 1.5 Research Objectives
 1. **RO-1:** Formulate and validate a 3-layer multi-objective optimization model minimizing total task delay $T_D$ and terminal energy $E$ subject to strict hardware memory and deadline constraints.
 2. **RO-2:** Design a hybrid IPSO-IACO algorithm where PSO global exploration seeds the initial pheromone distribution $\tau_{ij}(0)$ of IACO local exploitation.
 3. **RO-3:** Develop a Split Conformal Prediction pipeline that bounds execution uncertainty with verified coverage $P(y \in C(x)) \ge 1 - \alpha$.
-4. **RO-4:** Evaluate real-time execution throughput and worker queue scalability under burst loads exceeding 5,000 tasks/second.
+4. **RO-4:** Evaluate real-time execution throughput and worker queue scalability. The Python scheduling benchmark achieved throughput ranging from 1,400 to 6,600 tasks/s for workloads of 100–500 tasks. These measurements time the scheduler computation directly, not end-to-end API throughput.
 
 ### 1.6 Research Hypotheses
-- **$\mathbf{H_1}$ (Makespan Optimization):** The Hybrid Heuristic (HH) achieves a statistically significant reduction in makespan compared to Min-Min, IPSO, and IACO baselines ($p < 0.05$, Wilcoxon signed-rank test across 30 random seeds).
+- **$\mathbf{H_1}$ (Total Delay Optimization):** The Hybrid Heuristic (HH) achieves a statistically significant reduction in total scheduling delay compared to Min-Min and IPSO baselines; however, its advantage over IACO is not statistically significant at N=300 (Wilcoxon p = 0.158).
 - **$\mathbf{H_2}$ (Conformal Safety Guarantee):** Split Conformal Prediction maintains empirical test coverage $\ge (1-\alpha)$ across significance levels $\alpha \in \{0.05, 0.10, 0.15, 0.20\}$ on real-world cloud execution traces.
 - **$\mathbf{H_3}$ (Real-Time Ingestion Throughput):** Decoupling task ingestion via asynchronous BullMQ queues enables sustained throughput $> 1,000\text{ tasks/s}$ with P99 API response latencies $< 20\text{ ms}$.
 
@@ -61,7 +63,7 @@ Classical heuristic scheduling algorithms (e.g., Min-Min, Max-Min, FCFS, Round R
 │ Wilcoxon Significance p < 1e-4│ results/master_experiments/exp01_*.csv   │ ✅ VERIFIED  │
 │ ML R² = 0.8508, MAE = 1.013s │ results/master_experiments/exp02_*.csv   │ ✅ VERIFIED  │
 │ Conformal Coverage ≥ 90.0%   │ results/master_experiments/exp02_*.csv   │ ✅ VERIFIED  │
-│ Throughput > 5,000 tasks/s   │ results/master_experiments/exp03_*.csv   │ ✅ VERIFIED  │
+│ Throughput 1,400-6,600 tasks/s   │ results/master_experiments/exp03_*.csv   │ ✅ VERIFIED  │
 │ Deep RL Inference < 0.03 ms  │ results/master_experiments/exp04_*.csv   │ ✅ VERIFIED  │
 │ 3-Layer Fog Math Equations   │ backend/src/services/fog/math.ts         │ ✅ VERIFIED  │
 │ Asynchronous BullMQ Queue    │ backend/src/workers/taskQueue.worker.ts  │ ✅ VERIFIED  │
@@ -82,7 +84,7 @@ Classical heuristic scheduling algorithms (e.g., Min-Min, Max-Min, FCFS, Round R
 ---
 
 ### **Abstract**
-Fog computing bridges the latency gap between edge Internet-of-Things (IoT) devices and centralized cloud datacenters by dispatching computational workloads to heterogeneous intermediate nodes. However, orchestrating deadline-critical, resource-intensive tasks across fog clusters requires resolving a non-convex, NP-hard multi-objective optimization problem spanning execution latency, transmission energy, and hardware capacity constraints. In this paper, we present an intelligent, end-to-end task allocation and scheduling framework that integrates a two-stage hybrid metaheuristic optimizer with conformal-guaranteed machine learning execution predictors. The algorithmic core combines an Improved Particle Swarm Optimization (IPSO) featuring non-linear exponential inertia weight decay with an Improved Ant Colony Optimization (IACO) enforcing bounded pheromone evaporation to avoid premature local stagnation. To address dynamic execution uncertainty, we incorporate a Split Conformal Prediction engine that provides rigorous finite-sample coverage guarantees ($1-\alpha = 90.0\%$) over tree-based regressors ($R^2 = 0.8508$, $\text{MAE} = 1.013\text{ s}$). Rigorous multi-seed empirical experiments across 30 independent runs demonstrate that our proposed Hybrid Heuristic achieves a makespan of $905.59 \pm 84.09\text{ s}$ on a 300-task workload, outperforming Min-Min by $32.7\%$ and FCFS by $55.1\%$ ($p = 1.863 \times 10^{-9}$, Wilcoxon signed-rank test). The entire architecture is realized as a containerized microservices platform capable of sustaining burst ingestion throughput of $5,961.6\text{ tasks/s}$ with sub-20ms P99 latencies.
+Fog computing bridges the latency gap between edge Internet-of-Things (IoT) devices and centralized cloud datacenters by dispatching computational workloads to heterogeneous intermediate nodes. However, orchestrating deadline-critical, resource-intensive tasks across fog clusters requires resolving a non-convex, NP-hard multi-objective optimization problem spanning execution latency, transmission energy, and hardware capacity constraints. In this paper, we present an intelligent, end-to-end task allocation and scheduling framework that integrates a two-stage hybrid metaheuristic optimizer with conformal-guaranteed machine learning execution predictors. The algorithmic core combines an Improved Particle Swarm Optimization (IPSO) featuring non-linear exponential inertia weight decay with an Improved Ant Colony Optimization (IACO) enforcing bounded pheromone evaporation to avoid premature local stagnation. To address dynamic execution uncertainty, we incorporate a Split Conformal Prediction engine that provides rigorous finite-sample coverage guarantees ($1-\alpha = 90.0\%$) over tree-based regressors ($R^2 = 0.8508$, $\text{MAE} = 1.013\text{ s}$). Rigorous multi-seed empirical experiments across 30 independent runs demonstrate that our proposed Hybrid Heuristic achieves a total scheduling delay of $905.59 \pm 84.09\text{ s}$ on a 300-task workload, outperforming Min-Min by $32.7\%$ and FCFS by $55.1\%$ ($p = 1.863 \times 10^{-9}$, Wilcoxon signed-rank test). The entire architecture is realized as a containerized microservices platform capable of achieving Python scheduling benchmark throughput ranging from 1,400 to 6,600 tasks/s for workloads of 100–500 tasks (timing the scheduler computation directly, not end-to-end API throughput), completing scheduling operations within target latency bounds, while ML inference and authentication operations incurred higher per-request latency as detailed in Table X.
 
 **Keywords:** Fog Computing, Task Scheduling, Hybrid Metaheuristic, Particle Swarm Optimization, Ant Colony Optimization, Split Conformal Prediction, Explainable AI.
 
@@ -227,12 +229,12 @@ $$P(Y_{N+1} \in C(X_{N+1})) \ge 1 - \alpha$$
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────────────────┐
-│                    MAKESPAN CONVERGENCE COMPARISON (N = 300 TASKS)                     │
+│                    TOTAL DELAY CONVERGENCE COMPARISON (N = 300 TASKS)                     │
 ├───────────────────┬──────────────────────────┬───────────────────┬─────────────────────┤
-│ Algorithm         │ Makespan (Mean ± Std, s) │ Energy (Mean, J)  │ Wilcoxon p-value    │
+│ Algorithm         │ Total Delay (Mean ± Std, s)  │ Energy (Mean, J)  │ Wilcoxon p-value    │
 ├───────────────────┼──────────────────────────┼───────────────────┼─────────────────────┤
 │ FCFS              │ 2016.26 ± 365.85 s       │ 154.09 J          │ 1.863e-09 (***)     │
-│ Round-Robin (RR)  │ 2016.26 ± 365.85 s       │ 154.09 J          │ 1.863e-09 (***)     │
+│ Round-Robin (RR)  │ 1449.98 ± 146.72 s       │ 143.07 J          │ 1.863e-09 (***)     │
 │ Min-Min           │ 1345.41 ± 130.51 s       │ 131.75 J          │ 1.863e-09 (***)     │
 │ IPSO Standalone   │ 1314.07 ± 162.85 s       │ 133.44 J          │ 1.863e-09 (***)     │
 │ IACO Standalone   │ 910.09 ± 82.64 s         │ 137.42 J          │ 0.1579 (Parity)     │
@@ -241,7 +243,7 @@ $$P(Y_{N+1} \in C(X_{N+1})) \ge 1 - \alpha$$
 (***) indicates statistical significance at alpha = 0.001 level.
 ```
 
-**Analysis:** Across all workload sizes ($N=50$ to $N=300$), the proposed Hybrid Heuristic achieves the lowest total makespan. At $N=300$, HH reduces makespan by $32.7\%$ compared to Min-Min ($p = 1.863 \times 10^{-9}$) and $55.1\%$ compared to FCFS.
+**Analysis:** Across all workload sizes ($N=50$ to $N=300$), the proposed Hybrid Heuristic achieves the lowest total scheduling delay. At $N=300$, HH reduces total scheduling delay by $32.7\%$ compared to Min-Min ($p = 1.863 \times 10^{-9}$) and $55.1\%$ compared to FCFS.
 
 #### 5.3 EXP-02: Conformal Coverage Verification
 
@@ -252,12 +254,10 @@ $$P(Y_{N+1} \in C(X_{N+1})) \ge 1 - \alpha$$
 | $\alpha = 0.15$ | 85.0% | $\pm 1.541\text{ s}$ | **85.00%** | ✅ Verified |
 | $\alpha = 0.20$ | 80.0% | $\pm 1.060\text{ s}$ | **78.70%** | ⚠️ Bounded Variance |
 
-**Analysis:** The conformal engine rigorously satisfies the nominal coverage requirement ($90.00\% \ge 90.0\%$) with tight interval margins of $\pm 2.40\text{ s}$, preventing unhandled deadline violations.
+**Analysis:** The conformal engine rigorously satisfies the nominal coverage requirement ($90.00\% \ge 90.0\%$) with tight interval margins of $\pm 2.40\text{ s}$, preventing unhandled deadline violations. Research Experiment 2 evaluates coverage at α = 0.10 (90% target). The runtime model configuration defaults to α = 0.05 (95% target).
 
 #### 5.4 EXP-03: Real-Time Ingestion Throughput
-- **100 Tasks:** $5,961.6\text{ tasks/s}$ (P50: $16.0\text{ ms}$, P99: $18.8\text{ ms}$).
-- **500 Tasks:** $1,113.8\text{ tasks/s}$ (P50: $454.0\text{ ms}$, P99: $492.6\text{ ms}$).
-- **1,000 to 5,000 Tasks (Fast-Path Tier):** $> 10,000\text{ tasks/s}$ with sub-millisecond response.
+The Python scheduling benchmark achieved throughput ranging from 1,400 to 6,600 tasks/s for workloads of 100–500 tasks. These measurements time the scheduler computation directly, not end-to-end API throughput. Under the tested workload, scheduling operations completed within target latency bounds, while ML inference and authentication operations incurred higher per-request latency as detailed in Table X.
 
 #### 5.5 EXP-04: Deep RL vs Metaheuristic Trade-Off
 - **RL Single-Pass Forward Inference:** Sub-0.03 ms per decision ($> 2,000\times$ faster than iterative heuristics).
@@ -279,7 +279,7 @@ $$P(Y_{N+1} \in C(X_{N+1})) \ge 1 - \alpha$$
 ---
 
 ### **8. Conclusion & Future Work**
-We introduced an intelligent task allocation framework integrating two-stage hybrid metaheuristics (IPSO + IACO) with Split Conformal ML uncertainty estimation in heterogeneous fog computing. Empirical testing over 30 random seeds confirmed statistically significant makespan reductions ($32.7\%$ over Min-Min, $p < 10^{-8}$) and guaranteed $90\%$ conformal coverage. Future research will explore multi-agent reinforcement learning (MARL) for decentralized multi-cluster federation.
+We introduced an intelligent task allocation framework integrating two-stage hybrid metaheuristics (IPSO + IACO) with Split Conformal ML uncertainty estimation in heterogeneous fog computing. Empirical testing over 30 random seeds confirmed statistically significant total scheduling delay reductions ($32.7\%$ over Min-Min, $p < 10^{-8}$) and guaranteed $90\%$ conformal coverage. Future research will explore multi-agent reinforcement learning (MARL) for decentralized multi-cluster federation.
 
 ---
 
@@ -320,7 +320,7 @@ graph TD
 
 ### Table 1: Complete Workload Benchmark Across Task Counts ($N = 50$ to $300$)
 
-| Workload ($N$) | Algorithm | Makespan ($T_D$, s) | Terminal Energy ($E$, J) | Success Ratio (%) | Wilcoxon $p$-value |
+| Workload ($N$) | Algorithm | Total Delay ($T_D$, s) | Terminal Energy ($E$, J) | Success Ratio (%) | Wilcoxon $p$-value |
 |:---|:---|:---:|:---:|:---:|:---:|
 | **50** | FCFS | $329.42 \pm 62.50$ | $26.00 \pm 4.03$ | $98.60 \pm 1.65$ | $1.863 \times 10^{-9}$ |
 | | Min-Min | $197.72 \pm 27.16$ | $21.97 \pm 2.27$ | $99.87 \pm 0.50$ | $1.863 \times 10^{-9}$ |
@@ -389,7 +389,7 @@ python generate_pdfs.py
 - **Weaknesses:** Baseline regressor is Random Forest; future revisions should compare against TabNet and Conformalized Quantile Regression (CQR).
 
 ### Reviewer 2 (Systems & Distributed Infrastructure Researcher): **ACCEPT**
-- **Strengths:** Rare combination of theoretical optimization with real microservices implementation (BullMQ, Redis, PostgreSQL). Thorough throughput scalability testing up to 5,000 tasks/second.
+- **Strengths:** Rare combination of theoretical optimization with real microservices implementation (BullMQ, Redis, PostgreSQL). Thorough throughput scalability testing for workloads of 100-500 tasks.
 - **Weaknesses:** Did not evaluate multi-region geo-distributed database replication latency.
 
 ### Reviewer 3 (Academic & Evaluator Reviewer): **STRONG ACCEPT**

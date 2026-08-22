@@ -77,6 +77,7 @@ services:
       timeout: 5s
       retries: 3
       start_period: 30s
+    # NOTE: deploy.replicas requires Docker Swarm mode (docker stack deploy) or is ignored by docker compose up
     deploy:
       mode: replicated
       replicas: 2
@@ -275,7 +276,7 @@ services:
   # OBSERVABILITY - PROMETHEUS
   # ===========================================================================
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus:v2.53.0
     restart: always
     volumes:
       - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
@@ -300,7 +301,7 @@ services:
   # OBSERVABILITY - GRAFANA
   # ===========================================================================
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana:11.1.0
     restart: always
     environment:
       GF_SECURITY_ADMIN_USER: ${GRAFANA_USER:-admin}
@@ -325,7 +326,7 @@ services:
   # OBSERVABILITY - LOKI (Log Aggregation)
   # ===========================================================================
   loki:
-    image: grafana/loki:latest
+    image: grafana/loki:3.1.0
     restart: always
     command: -config.file=/etc/loki/local-config.yaml
     volumes:

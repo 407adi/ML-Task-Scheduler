@@ -122,7 +122,7 @@ class FogEnvironment:
         fitness = 1.0 / (0.5 * total_delay + 0.5 * total_energy + 1e-6)
         
         return {
-            "makespan": float(total_delay),
+            "total_scheduling_delay": float(total_delay),
             "energy": float(total_energy),
             "reliability": float(reliability),
             "fitness": float(fitness)
@@ -133,10 +133,20 @@ class FogEnvironment:
 # ALGORITHMIC IMPLEMENTATIONS
 # ============================================================================
 def solve_fcfs(env: FogEnvironment) -> np.ndarray:
+    """FCFS: Assign tasks in sequential arrival order to nodes cyclically."""
     return np.arange(env.n_tasks) % env.n_nodes
 
 def solve_round_robin(env: FogEnvironment) -> np.ndarray:
-    return np.arange(env.n_tasks) % env.n_nodes
+    """Round-Robin: Load-aware cyclic distribution considering node capacity."""
+    N, M = env.n_tasks, env.n_nodes
+    allocation = np.zeros(N, dtype=int)
+    node_load = np.zeros(M)
+    for t in range(N):
+        # Pick the node with minimum accumulated load
+        best_node = np.argmin(node_load)
+        allocation[t] = best_node
+        node_load[best_node] += env.total_delay_matrix[t, best_node]
+    return allocation
 
 def solve_min_min(env: FogEnvironment) -> np.ndarray:
     N, M = env.n_tasks, env.n_nodes
@@ -263,53 +273,53 @@ def run_exp01():
     
     for tc in task_counts:
         t0 = time.time()
-        seed_results = {algo: {"makespan": [], "energy": [], "reliability": []} for algo in algorithms}
+        seed_results = {algo: {"total_scheduling_delay": [], "energy": [], "reliability": []} for algo in algorithms}
         
         for s in range(1, n_seeds + 1):
             env = FogEnvironment(n_tasks=tc, n_nodes=10, seed=s*100 + tc)
             
             # FCFS
             r = env.evaluate_solution(solve_fcfs(env))
-            seed_results["FCFS"]["makespan"].append(r["makespan"])
+            seed_results["FCFS"]["total_scheduling_delay"].append(r["total_scheduling_delay"])
             seed_results["FCFS"]["energy"].append(r["energy"])
             seed_results["FCFS"]["reliability"].append(r["reliability"])
             
             # RR
             r = env.evaluate_solution(solve_round_robin(env))
-            seed_results["RR"]["makespan"].append(r["makespan"])
+            seed_results["RR"]["total_scheduling_delay"].append(r["total_scheduling_delay"])
             seed_results["RR"]["energy"].append(r["energy"])
             seed_results["RR"]["reliability"].append(r["reliability"])
             
             # Min-Min
             r = env.evaluate_solution(solve_min_min(env))
-            seed_results["Min-Min"]["makespan"].append(r["makespan"])
+            seed_results["Min-Min"]["total_scheduling_delay"].append(r["total_scheduling_delay"])
             seed_results["Min-Min"]["energy"].append(r["energy"])
             seed_results["Min-Min"]["reliability"].append(r["reliability"])
             
             # IPSO
             r = env.evaluate_solution(solve_ipso(env, seed=s))
-            seed_results["IPSO"]["makespan"].append(r["makespan"])
+            seed_results["IPSO"]["total_scheduling_delay"].append(r["total_scheduling_delay"])
             seed_results["IPSO"]["energy"].append(r["energy"])
             seed_results["IPSO"]["reliability"].append(r["reliability"])
             
             # IACO
             r = env.evaluate_solution(solve_iaco(env, seed=s))
-            seed_results["IACO"]["makespan"].append(r["makespan"])
+            seed_results["IACO"]["total_scheduling_delay"].append(r["total_scheduling_delay"])
             seed_results["IACO"]["energy"].append(r["energy"])
             seed_results["IACO"]["reliability"].append(r["reliability"])
             
             # Proposed HH
             r = env.evaluate_solution(solve_hybrid(env, seed=s))
-            seed_results["HH"]["makespan"].append(r["makespan"])
+            seed_results["HH"]["total_scheduling_delay"].append(r["total_scheduling_delay"])
             seed_results["HH"]["energy"].append(r["energy"])
             seed_results["HH"]["reliability"].append(r["reliability"])
             
         elapsed = time.time() - t0
         print(f"  [DONE] N = {tc:3d} Tasks completed in {elapsed:.2f}s")
         
-        hh_makespan = seed_results["HH"]["makespan"]
+        hh_makespan = seed_results["HH"]["total_scheduling_delay"]
         for algo in algorithms:
-            m_vals = seed_results[algo]["makespan"]
+            m_vals = seed_results[algo]["total_scheduling_delay"]
             e_vals = seed_results[algo]["energy"]
             r_vals = seed_results[algo]["reliability"]
             
@@ -324,8 +334,8 @@ def run_exp01():
             records.append({
                 "Tasks": tc,
                 "Algorithm": algo,
-                "Makespan_Mean": float(np.mean(m_vals)),
-                "Makespan_Std": float(np.std(m_vals)),
+                "Total_Delay_Mean": float(np.mean(m_vals)),
+                "Total_Delay_Std": float(np.std(m_vals)),
                 "Energy_Mean": float(np.mean(e_vals)),
                 "Energy_Std": float(np.std(e_vals)),
                 "Reliability_Mean": float(np.mean(r_vals)),
@@ -339,16 +349,16 @@ def run_exp01():
     print(f"\n  [SAVED] Experiment 1 Results exported to: {csv_path}")
     
     print("\n  Summary Table at Workload N = 300 Tasks (Mean ± Std, 30 Runs):")
-    print("  " + "-"*75)
-    print(f"  {'Algorithm':<12} | {'Makespan (s)':<18} | {'Energy (J)':<18} | {'Wilcoxon p-val':<15}")
-    print("  " + "-"*75)
+    print("  " + "-"*85)
+    print(f"  {'Algorithm':<12} | {'Total Scheduling Delay (s)':<26} | {'Energy (J)':<18} | {'Wilcoxon p-val':<15}")
+    print("  " + "-"*85)
     sub = df_exp01[df_exp01["Tasks"] == 300]
     for _, row in sub.iterrows():
-        m_str = f"{row['Makespan_Mean']:.2f} ± {row['Makespan_Std']:.2f}s"
+        m_str = f"{row['Total_Delay_Mean']:.2f} ± {row['Total_Delay_Std']:.2f}s"
         e_str = f"{row['Energy_Mean']:.2f} ± {row['Energy_Std']:.2f}J"
         p_str = f"{row['Wilcoxon_p_value']:.4e}" if row['Algorithm'] != "HH" else "Ref (Baseline)"
-        print(f"  {row['Algorithm']:<12} | {m_str:<18} | {e_str:<18} | {p_str:<15}")
-    print("  " + "-"*75)
+        print(f"  {row['Algorithm']:<12} | {m_str:<26} | {e_str:<18} | {p_str:<15}")
+    print("  " + "-"*85)
     return df_exp01
 
 

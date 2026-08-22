@@ -37,11 +37,13 @@ services:
   # ===========================================================================
   # REDIS (Cache + Queue)
   # ===========================================================================
+  # NOTE: Using noeviction policy to protect BullMQ job state integrity.
+  # Cache entries should use explicit TTL-based expiration instead of LRU eviction.
   redis:
     image: redis:7-alpine
     container_name: task-scheduler-redis
     restart: unless-stopped
-    command: redis-server --appendonly yes --appendfsync everysec --maxmemory 200mb --maxmemory-policy allkeys-lru
+    command: redis-server --appendonly yes --appendfsync everysec --maxmemory 256mb --maxmemory-policy noeviction
     ports:
       - "6379:6379"
     volumes:
@@ -197,7 +199,7 @@ services:
   # OBSERVABILITY - PROMETHEUS
   # ===========================================================================
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus:v2.53.0
     container_name: task-scheduler-prometheus
     restart: unless-stopped
     volumes:
@@ -221,7 +223,7 @@ services:
   # OBSERVABILITY - GRAFANA
   # ===========================================================================
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana:11.1.0
     container_name: task-scheduler-grafana
     restart: unless-stopped
     environment:

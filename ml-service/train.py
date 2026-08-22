@@ -54,7 +54,7 @@ except ImportError:
 # ---------------------------------------------------------------------------
 MODEL_DIR = Path("models")
 METADATA_DIR = Path("models/metadata")
-FEATURE_NAMES = ["taskSize", "taskType", "priority", "resourceLoad"]
+FEATURE_NAMES = ["taskSize", "taskType", "priority", "resourceLoad", "startupOverhead"]
 
 SIZE_MAP = {"SMALL": 1, "MEDIUM": 2, "LARGE": 3}
 TYPE_MAP = {"CPU": 1, "IO": 2, "MIXED": 3}
@@ -131,6 +131,7 @@ def generate_synthetic(n: int = 2000, seed: int = 42) -> pd.DataFrame:
     task_type = rng.choice([1, 2, 3], n)
     priority = rng.choice([1, 2, 3, 4, 5], n)
     resource_load = rng.uniform(0, 100, n)
+    startup_overhead = rng.uniform(0.1, 10.0, n)
 
     base_time = task_size * 2.0
     type_mod = np.where(task_type == 1, 1.0, np.where(task_type == 2, 1.3, 1.15))
@@ -145,6 +146,7 @@ def generate_synthetic(n: int = 2000, seed: int = 42) -> pd.DataFrame:
         "taskType": task_type,
         "priority": priority,
         "resourceLoad": resource_load,
+        "startupOverhead": startup_overhead,
         "actualTime": actual_time,
     })
 
@@ -185,6 +187,9 @@ def train(args):
         if df is None:
             df = generate_synthetic(seed=args.seed)
 
+    if "startupOverhead" not in df.columns:
+        df["startupOverhead"] = 1.0
+
     X = df[FEATURE_NAMES].values
     y = df["actualTime"].values
 
@@ -223,22 +228,28 @@ def train(args):
     }
     print(f"\n📈 CV Average: MAE={avg['mae']:.4f}  RMSE={avg['rmse']:.4f}  R²={avg['r2']:.4f}")
 
-    # 4. Final model trained on full dev set with StandardScaler & Conformal calibration
+    # 4. Final model: proper split-conformal calibration (no leakage)
+    #    Split dev into train (80%) and calibration (20%) holdout
+    X_train_final, X_cal, y_train_final, y_cal = train_test_split(
+        X_dev, y_dev, test_size=0.2, random_state=args.seed
+    )
+
     scaler = StandardScaler()
-    X_dev_scaled = scaler.fit_transform(X_dev)
+    X_train_scaled = scaler.fit_transform(X_train_final)
+    X_cal_scaled = scaler.transform(X_cal)
     X_test_scaled = scaler.transform(X_test)
 
     final_model = build_model(args.model, args.seed)
-    final_model.fit(X_dev_scaled, y_dev)
+    final_model.fit(X_train_scaled, y_train_final)
     y_test_pred = final_model.predict(X_test_scaled)
 
-    # Conformal calibration on dev set
-    dev_preds = final_model.predict(X_dev_scaled)
-    dev_residuals = np.abs(y_dev - dev_preds)
+    # Conformal calibration on HELD-OUT calibration set (no leakage)
+    cal_preds = final_model.predict(X_cal_scaled)
+    cal_residuals = np.abs(y_cal - cal_preds)
     alpha = 0.05
-    n_dev = len(dev_residuals)
-    q_level = min(1.0, np.ceil((n_dev + 1) * (1 - alpha)) / n_dev)
-    calibration_quantile = float(np.quantile(dev_residuals, q_level))
+    n_cal = len(cal_residuals)
+    q_level = min(1.0, np.ceil((n_cal + 1) * (1 - alpha)) / n_cal)
+    calibration_quantile = float(np.quantile(cal_residuals, q_level))
 
     test_metrics = {
         "mae": float(mean_absolute_error(y_test, y_test_pred)),
@@ -282,6 +293,8 @@ def train(args):
         "data_hash": data_hash,
         "data_rows": len(df),
         "dev_rows": len(X_dev),
+        "calibration_split": "80% train / 20% calibration holdout from dev set",
+        "calibration_samples": len(X_cal) if 'X_cal' in dir() else None,
         "test_rows": len(X_test),
         "k_folds": args.folds,
         "seed": args.seed,

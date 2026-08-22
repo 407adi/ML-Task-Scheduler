@@ -45,7 +45,7 @@ jobs:
 
       - name: Frontend lint
         working-directory: frontend
-        run: npx eslint src/ --max-warnings 0 || true
+        run: npx eslint src/ --max-warnings 0
 
   # ─────────────────────────────────────────────
   # Stage 2: Backend Tests
@@ -102,7 +102,7 @@ jobs:
 
       - name: Run tests
         working-directory: backend
-        run: npm test -- --coverage || echo "No tests configured yet"
+        run: npm test -- --coverage
 
   # ─────────────────────────────────────────────
   # Stage 3: ML Service Tests
@@ -181,11 +181,11 @@ jobs:
 
       - name: Health check - Backend
         run: |
-          docker compose exec -T backend curl -sf http://localhost:3001/api/health || echo "Backend not healthy"
+          docker compose exec -T backend curl -sf http://localhost:3001/api/health
 
       - name: Health check - ML Service
         run: |
-          docker compose exec -T ml-service curl -sf http://localhost:5001/api/health || echo "ML not healthy"
+          docker compose exec -T ml-service curl -sf http://localhost:5001/api/health
 
       - name: Cleanup
         if: always()

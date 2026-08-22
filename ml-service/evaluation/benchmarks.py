@@ -101,8 +101,8 @@ def context_switches(episode: ScheduleEpisode) -> int:
     return switches
 
 
-def makespan(episode: ScheduleEpisode) -> float:
-    """Total schedule duration."""
+def total_scheduling_delay(episode: ScheduleEpisode) -> float:
+    """Aggregate total delay: sum of all task durations (not max completion time)."""
     return sum(t.actual_duration for t in episode.tasks)
 
 
@@ -288,7 +288,7 @@ def run_benchmark(
             'completion_rate': [],
             'avg_lateness': [],
             'context_switches': [],
-            'makespan': [],
+            'total_scheduling_delay': [],
             'ndcg': [],
             'unified_J': [],  # unified objective function
         }
@@ -302,7 +302,7 @@ def run_benchmark(
             results[algo_name]['completion_rate'].append(completion_rate(episode))
             results[algo_name]['avg_lateness'].append(average_lateness(episode))
             results[algo_name]['context_switches'].append(context_switches(episode))
-            results[algo_name]['makespan'].append(makespan(episode))
+            results[algo_name]['total_scheduling_delay'].append(total_scheduling_delay(episode))
             results[algo_name]['ndcg'].append(ndcg_priority(episode))
             results[algo_name]['unified_J'].append(unified_objective_J(episode))
 
@@ -476,7 +476,7 @@ def main():
     summary = run_benchmark(tasks_list, args.algorithms, args.seed)
 
     # Print results table
-    metrics_to_show = ['completion_rate', 'avg_lateness', 'ndcg', 'context_switches', 'makespan']
+    metrics_to_show = ['completion_rate', 'avg_lateness', 'ndcg', 'context_switches', 'total_scheduling_delay']
     headers = ['Algorithm'] + [m.replace('_', ' ').title() for m in metrics_to_show]
     print(f"\n{'  '.join(h.ljust(18) for h in headers)}")
     print('-' * 18 * len(headers))
