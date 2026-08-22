@@ -181,7 +181,7 @@ jobs:
 
       - name: Health check - Backend
         run: |
-          docker compose exec -T backend curl -sf http://localhost:3001/api/health
+          docker compose exec -T backend wget -qO- http://localhost:3001/api/health
 
       - name: Health check - ML Service
         run: |
