@@ -711,7 +711,7 @@ The `infra/` directory provides production-ready infrastructure templates:
 
 ## 👥 Team & Academic Credits
 
-This project was developed as a Final Year Study Project for the **Online Bachelor of Science in Computer Science** program at **Birla Institute of Technology and Science, Pilani (BITS Pilani)**.
+This project was developed as a Final Year Study Project for the **Bachelor of Science in Computer Science** program at **Birla Institute of Technology and Science, Pilani (BITS Pilani)**.
 
 ### Team Byte_hogs
 
