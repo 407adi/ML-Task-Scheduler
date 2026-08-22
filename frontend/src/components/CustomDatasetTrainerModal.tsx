@@ -112,7 +112,7 @@ export default function CustomDatasetTrainerModal({
     setIsUploading(true);
     try {
       const text = await file.text();
-      let payload: any = { filename: file.name };
+      const payload: any = { filename: file.name };
 
       if (ext === 'json') {
         const parsed = JSON.parse(text);

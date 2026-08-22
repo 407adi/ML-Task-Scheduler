@@ -149,7 +149,7 @@ export default function Kanban() {
     let currentIndex = statusOrder.indexOf(task.status);
     if (currentIndex === -1) currentIndex = 0;
 
-    let targetIndex = direction === 'next' ? currentIndex + 1 : currentIndex - 1;
+    const targetIndex = direction === 'next' ? currentIndex + 1 : currentIndex - 1;
     if (targetIndex < 0 || targetIndex >= statusOrder.length) return;
 
     const newStatus = statusOrder[targetIndex];
