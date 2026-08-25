@@ -3,7 +3,7 @@
 
 ---
 
-## 🚀 Quick Start
+##  Quick Start
 
 ### Accessing the Application
 
@@ -19,7 +19,7 @@
 
 ---
 
-## 📱 Application Pages
+##  Application Pages
 
 ### 1. Dashboard (Home Page)
 **URL:** http://localhost:3000/
@@ -205,7 +205,7 @@ Invoke-WebRequest -Uri "http://localhost:3001/api/reports/pdf/resources" -OutFil
 
 ---
 
-## 🧪 Testing the System
+##  Testing the System
 
 ### Quick Test Flow
 
@@ -286,7 +286,7 @@ curl http://localhost:5001/health
 
 ---
 
-## 📊 Understanding the ML Predictions
+## Understanding the ML Predictions
 
 When you schedule a task, the system:
 
@@ -316,7 +316,7 @@ When you schedule a task, the system:
 
 ---
 
-## 🎯 Key Features Summary
+##  Key Features Summary
 
 | Feature | How It Works |
 |---------|--------------|

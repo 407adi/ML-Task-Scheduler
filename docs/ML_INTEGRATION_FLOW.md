@@ -535,7 +535,7 @@ function generateExplanation(task, best):
 └─────────────────────────────────────────────────────────────────────────────┘
 
 ╔═══════════════════════════════════════╦═══════════════════════════════════╗
-║           ML DOES ✅                  ║         ML DOESN'T ❌             ║
+║           ML DOES                  ║         ML DOESN'T             ║
 ╠═══════════════════════════════════════╬═══════════════════════════════════╣
 ║                                       ║                                   ║
 ║  • Predict task execution time        ║  • Make final scheduling decision ║
@@ -602,4 +602,4 @@ function generateExplanation(task, best):
 
 ---
 
-*Document created for Phase 3 Design Submission | Team Byte_hogs | 2026*
+

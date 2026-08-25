@@ -78,26 +78,26 @@ The paper "Task Scheduling Based on a Hybrid Heuristic Algorithm for Smart Produ
 
 ### 4.1 In Scope
 
-- ✅ Task management (create, view, update, delete tasks with priority/deadline)
-- ✅ Resource management (monitor resource capacity, load, availability)
-- ✅ Scheduler engine implementation (heuristic-based, priority-aware)
-- ✅ ML prediction module (execution time prediction using linear/random forest regression)
-- ✅ Web UI dashboard (task submission, resource monitoring, performance visualization)
-- ✅ Performance comparison (intelligent vs. baseline algorithms)
-- ✅ RESTful API for all operations
-- ✅ Real-time updates using WebSockets
-- ✅ Containerized deployment (Docker)
-- ✅ Automated testing (unit + integration tests)
+-  Task management (create, view, update, delete tasks with priority/deadline)
+-  Resource management (monitor resource capacity, load, availability)
+-  Scheduler engine implementation (heuristic-based, priority-aware)
+-  ML prediction module (execution time prediction using linear/random forest regression)
+-  Web UI dashboard (task submission, resource monitoring, performance visualization)
+-  Performance comparison (intelligent vs. baseline algorithms)
+-  RESTful API for all operations
+-  Real-time updates using WebSockets
+-  Containerized deployment (Docker)
+-  Automated testing (unit + integration tests)
 
 ### 4.2 Out of Scope
 
-- ❌ Distributed consensus algorithms (Raft, Paxos)
-- ❌ GPU/Tensor processing acceleration
-- ❌ Multi-cloud federation and hybrid cloud support
-- ❌ Commercial-grade security (encryption, authentication beyond basic)
-- ❌ Advanced reinforcement learning models
-- ❌ Blockchain integration
-- ❌ Real production deployment (Capstone phase)
+-  Distributed consensus algorithms (Raft, Paxos)
+-  GPU/Tensor processing acceleration
+-  Multi-cloud federation and hybrid cloud support
+-  Commercial-grade security (encryption, authentication beyond basic)
+-  Advanced reinforcement learning models
+-  Blockchain integration
+-  Real production deployment (Capstone phase)
 
 ### 4.3 Constraints
 
@@ -199,19 +199,19 @@ The paper "Task Scheduling Based on a Hybrid Heuristic Algorithm for Smart Produ
 | **CI/CD** | GitHub Actions | Latest | Free, integrated with GitHub |
 
 ### Why This Stack?
-- ✅ **Full JavaScript/Node.js stack** for unified development
-- ✅ **Python for ML** (industry standard, easy to learn)
-- ✅ **PostgreSQL** for reliable, queryable data
-- ✅ **Docker** for consistent deployment
-- ✅ **Zero cost** (all open-source)
-- ✅ **Industry-relevant** (used at major tech companies)
-- ✅ **Learning-friendly** (extensive tutorials, large community)
+-  **Full JavaScript/Node.js stack** for unified development
+-  **Python for ML** (industry standard, easy to learn)
+-  **PostgreSQL** for reliable, queryable data
+-  **Docker** for consistent deployment
+-  **Zero cost** (all open-source)
+-  **Industry-relevant** (used at major tech companies)
+-  **Learning-friendly** (extensive tutorials, large community)
 
 ---
 
 ## 8. PROJECT TIMELINE
 
-### Phase 1: Study & Planning (Weeks 1-3) ✅ **CURRENT**
+### Phase 1: Study & Planning (Weeks 1-3)  **CURRENT**
 - Problem identification and research
 - Literature review (research papers, existing solutions)
 - Team role assignment
@@ -283,18 +283,18 @@ The paper "Task Scheduling Based on a Hybrid Heuristic Algorithm for Smart Produ
 
 ## 10. FEASIBILITY ASSESSMENT
 
-### 10.1 Technical Feasibility ✅
+### 10.1 Technical Feasibility 
 - All technologies are well-documented with extensive community support
 - No cutting-edge or unproven technologies
 - Modular architecture allows parallel development
 - Simple ML model (no complex deep learning required)
 
-### 10.2 Economic Feasibility ✅
+### 10.2 Economic Feasibility 
 - All tools are open-source and free
 - No infrastructure costs (free tier cloud platforms available)
 - No hardware requirements (standard laptops sufficient)
 
-### 10.3 Time Feasibility ✅
+### 10.3 Time Feasibility 
 - 12-week timeline is realistic for scope
 - Phase-wise breakdown prevents overcommitment
 - Buffer time included in schedule

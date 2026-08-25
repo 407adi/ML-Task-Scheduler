@@ -1,6 +1,6 @@
 # Viva Q&A - Interview Preparation
 
-## 🎯 How to Use This Document
+##  How to Use This Document
 
 1. Read each question
 2. Memorize the **short answer**
@@ -9,7 +9,7 @@
 
 ---
 
-## 📌 BASIC PROJECT QUESTIONS
+##  BASIC PROJECT QUESTIONS
 
 ### Q1: What is your project about?
 **Short Answer:**
@@ -125,7 +125,7 @@ Output:
 
 ---
 
-## 🏗️ ARCHITECTURE QUESTIONS
+##  ARCHITECTURE QUESTIONS
 
 ### Q10: Explain your system architecture.
 **Short Answer:**
@@ -172,7 +172,7 @@ Output:
 
 ---
 
-## 📊 TECHNICAL QUESTIONS
+##  TECHNICAL QUESTIONS
 
 ### Q13: Explain the scheduling algorithm.
 **Short Answer:**
@@ -241,7 +241,7 @@ Analytics:
 
 ---
 
-## 📅 FEASIBILITY QUESTIONS
+##  FEASIBILITY QUESTIONS
 
 ### Q16: Is this feasible in 6-9 months?
 **Short Answer:**
@@ -317,7 +317,7 @@ Analytics:
 
 ---
 
-## 💡 QUICK FIRE ROUND (1-2 word answers)
+##  QUICK FIRE ROUND (1-2 word answers)
 
 | Question | Answer |
 |----------|--------|
@@ -336,7 +336,7 @@ Analytics:
 
 ---
 
-## 🔥 CONFIDENCE BOOSTERS
+##  CONFIDENCE BOOSTERS
 
 ### If you don't know an answer:
 > "That's a good question. I haven't explored that specific aspect yet, but I can look into it and get back to you."

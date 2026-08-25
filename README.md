@@ -1,4 +1,4 @@
-# ⚡ Intelligent Task Allocation and Scheduling System
+#  Intelligent Task Allocation and Scheduling System
 ### *ML-Assisted Fog-Cloud Computing Optimization & Bio-Inspired Metaheuristics*
 
 <p align="center">
@@ -14,7 +14,7 @@
 
 ---
 
-## 📌 Executive Summary
+##  Executive Summary
 
 The **Intelligent Task Allocation and Scheduling System** is a reproducible fog-computing scheduling simulation platform designed to solve multi-objective, non-deterministic polynomial-time (NP-hard) task scheduling challenges across multi-tiered **Fog-Cloud Computing** architectures.
 
@@ -29,7 +29,7 @@ Bridging the gap between theoretical academic research and applied software engi
 
 ---
 
-## 📑 Table of Contents
+##  Table of Contents
 
 - [Key System Highlights](#-key-system-highlights)
 - [System Architecture](#-system-architecture)
@@ -66,7 +66,7 @@ Bridging the gap between theoretical academic research and applied software engi
 
 ---
 
-## 🌟 Key System Highlights
+##  Key System Highlights
 
 - **10 Industrial & Research Scheduling Algorithms**: Full implementations of Hybrid Heuristic (IPSO + IACO), IPSO, IACO, ML-Enhanced, RL-PPO (MaskablePPO), Min-Min, Earliest Deadline First (EDF), Shortest Job First (SJF), Round-Robin, and First-Come-First-Served (FCFS).
 - **ML-assisted execution time prediction**: Predictive regression pipeline evaluating task data size, computation intensity, priority, resource load, and startup overhead with $R^2 = 0.9483$.
@@ -80,7 +80,7 @@ Bridging the gap between theoretical academic research and applied software engi
 
 ---
 
-## 🏗️ System Architecture
+##  System Architecture
 
 ### High-Level Microservices Topology
 
@@ -253,7 +253,7 @@ flowchart TD
 
 ---
 
-## 🧮 Fog Computing Mathematical Model
+##  Fog Computing Mathematical Model
 
 The scheduling system strictly adheres to the mathematical formulations defined in **Wang & Li (2019)** for 3-layer smart production lines.
 
@@ -340,7 +340,7 @@ npm run experiments:reliability-tolerance # Figure 8: Reliability vs Deadline To
 
 ---
 
-## 📁 Complete Project Directory Structure
+##  Complete Project Directory Structure
 
 ```
 PROJECT/
@@ -440,7 +440,7 @@ PROJECT/
 
 ---
 
-## 🚀 Quick Start Guide
+##  Quick Start Guide
 
 ### Option A: Docker Compose (Automated & Recommended)
 
@@ -532,7 +532,7 @@ npm run dev
 
 ---
 
-### 🔑 Default Seeded Credentials
+###  Default Seeded Credentials
 
 The database seeder automatically initializes three RBAC user personas:
 
@@ -544,7 +544,7 @@ The database seeder automatically initializes three RBAC user personas:
 
 ---
 
-## 🔌 Core API Routes & Endpoints (19 Modules)
+##🔌 Core API Routes & Endpoints (19 Modules)
 
 The Express backend exposes comprehensive REST API surface across 21 route modules adhering to standard HTTP semantics:
 
@@ -572,7 +572,7 @@ The Express backend exposes comprehensive REST API surface across 21 route modul
 
 ---
 
-## 🤖 ML & Deep Reinforcement Learning Pipeline
+##  ML & Deep Reinforcement Learning Pipeline
 
 ### Model Architecture & Validation Metrics
 
@@ -635,7 +635,7 @@ The PostgreSQL database is organized into 5 relational domains:
 
 ---
 
-## 🔒 Security Architecture
+##  Security Architecture
 
 - **Token Lifecycle**: Short-lived Access Tokens (15 min) paired with single-use Refresh Tokens stored in PostgreSQL and rotated atomically upon every refresh.
 - **Double-Submit CSRF Cookies**: Custom CSRF protection issuing cryptographically secure tokens validated across mutating `POST`, `PUT`, `PATCH`, and `DELETE` requests via `X-CSRF-Token` headers.
@@ -651,7 +651,7 @@ The PostgreSQL database is organized into 5 relational domains:
 
 ---
 
-## 📊 Observability, Telemetry & Chaos Engineering
+##  Observability, Telemetry & Chaos Engineering
 
 - **Prometheus Metrics**: Exports counters, histograms, and gauges for HTTP request durations, scheduling algorithm makespans, cache hit ratios, and active worker job counts.
 - **Pre-Configured Grafana Dashboards**:
@@ -695,7 +695,7 @@ python final_e2e_audit.py
 
 ---
 
-## ☁️ Cloud Deployment & Kubernetes Infrastructure
+##  Cloud Deployment & Kubernetes Infrastructure
 
 The `infra/` directory provides production-ready infrastructure templates:
 
@@ -709,7 +709,7 @@ The `infra/` directory provides production-ready infrastructure templates:
 
 ---
 
-## 👥 Team & Academic Credits
+##  Team & Academic Credits
 
 This project was developed as a Final Year Study Project for the **Bachelor of Science in Computer Science** program at **Birla Institute of Technology and Science, Pilani (BITS Pilani)**.
 
@@ -729,7 +729,7 @@ All team members contributed collaboratively across all phases of the project, i
 
 ---
 
-## 📚 References & Citation
+##  References & Citation
 
 If you use this codebase or research implementation in your work, please cite the underlying foundational literature:
 
@@ -757,7 +757,7 @@ If you use this codebase or research implementation in your work, please cite th
 
 ---
 
-## 📄 License
+##  License
 
 This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for complete details.
 

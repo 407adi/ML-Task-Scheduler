@@ -59,15 +59,15 @@ Classical heuristic scheduling algorithms (e.g., Min-Min, Max-Min, FCFS, Round R
 ├──────────────────────────────┬──────────────────────────────────────────┬──────────────┤
 │ Research Claim               │ Source Evidence Location                 │ Status       │
 ├──────────────────────────────┼──────────────────────────────────────────┼──────────────┤
-│ Multi-Seed Convergence       │ results/master_experiments/exp01_*.csv   │ ✅ VERIFIED  │
-│ Wilcoxon Significance p < 1e-4│ results/master_experiments/exp01_*.csv   │ ✅ VERIFIED  │
-│ ML R² = 0.8508, MAE = 1.013s │ results/master_experiments/exp02_*.csv   │ ✅ VERIFIED  │
-│ Conformal Coverage ≥ 90.0%   │ results/master_experiments/exp02_*.csv   │ ✅ VERIFIED  │
-│ Throughput 1,400-6,600 tasks/s   │ results/master_experiments/exp03_*.csv   │ ✅ VERIFIED  │
-│ Deep RL Inference < 0.03 ms  │ results/master_experiments/exp04_*.csv   │ ✅ VERIFIED  │
-│ 3-Layer Fog Math Equations   │ backend/src/services/fog/math.ts         │ ✅ VERIFIED  │
-│ Asynchronous BullMQ Queue    │ backend/src/workers/taskQueue.worker.ts  │ ✅ VERIFIED  │
-│ PostgreSQL 30-Model Schema   │ backend/prisma/schema.prisma             │ ✅ VERIFIED  │
+│ Multi-Seed Convergence       │ results/master_experiments/exp01_*.csv   │  VERIFIED  │
+│ Wilcoxon Significance p < 1e-4│ results/master_experiments/exp01_*.csv   │  VERIFIED  │
+│ ML R² = 0.8508, MAE = 1.013s │ results/master_experiments/exp02_*.csv   │  VERIFIED  │
+│ Conformal Coverage ≥ 90.0%   │ results/master_experiments/exp02_*.csv   │  VERIFIED  │
+│ Throughput 1,400-6,600 tasks/s   │ results/master_experiments/exp03_*.csv   │  VERIFIED  │
+│ Deep RL Inference < 0.03 ms  │ results/master_experiments/exp04_*.csv   │  VERIFIED  │
+│ 3-Layer Fog Math Equations   │ backend/src/services/fog/math.ts         │  VERIFIED  │
+│ Asynchronous BullMQ Queue    │ backend/src/workers/taskQueue.worker.ts  │  VERIFIED  │
+│ PostgreSQL 30-Model Schema   │ backend/prisma/schema.prisma             │  VERIFIED  │
 └──────────────────────────────┴──────────────────────────────────────────┴──────────────┘
 ```
 
@@ -249,10 +249,10 @@ $$P(Y_{N+1} \in C(X_{N+1})) \ge 1 - \alpha$$
 
 | Significance Level ($\alpha$) | Target Confidence ($1-\alpha$) | Conformal Margin ($\hat{q}$) | Empirical Test Coverage (%) | Status |
 |:---:|:---:|:---:|:---:|:---:|
-| $\alpha = 0.05$ | 95.0% | $\pm 4.700\text{ s}$ | **95.10%** | ✅ Verified |
-| $\alpha = 0.10$ | 90.0% | $\pm 2.399\text{ s}$ | **90.00%** | ✅ Verified |
-| $\alpha = 0.15$ | 85.0% | $\pm 1.541\text{ s}$ | **85.00%** | ✅ Verified |
-| $\alpha = 0.20$ | 80.0% | $\pm 1.060\text{ s}$ | **78.70%** | ⚠️ Bounded Variance |
+| $\alpha = 0.05$ | 95.0% | $\pm 4.700\text{ s}$ | **95.10%** |  Verified |
+| $\alpha = 0.10$ | 90.0% | $\pm 2.399\text{ s}$ | **90.00%** |  Verified |
+| $\alpha = 0.15$ | 85.0% | $\pm 1.541\text{ s}$ | **85.00%** |  Verified |
+| $\alpha = 0.20$ | 80.0% | $\pm 1.060\text{ s}$ | **78.70%** |  Bounded Variance |
 
 **Analysis:** The conformal engine rigorously satisfies the nominal coverage requirement ($90.00\% \ge 90.0\%$) with tight interval margins of $\pm 2.40\text{ s}$, preventing unhandled deadline violations. Research Experiment 2 evaluates coverage at α = 0.10 (90% target). The runtime model configuration defaults to α = 0.05 (95% target).
 
@@ -360,12 +360,12 @@ graph TD
 
 | Item | Verified Status | Description / Command |
 |:---|:---:|:---|
-| **Code Repository** | ✅ YES | Open-source GitHub repository `shri33/ML-Task-Scheduler` |
-| **Dependencies** | ✅ YES | Locked via `package-lock.json` and `requirements.txt` |
-| **Datasets** | ✅ YES | `ml-service/synthetic_cloud_tasks.csv` ($N=15,002$ records) |
-| **Random Seeds** | ✅ YES | Explicit seeds $s \in [1, 30]$ in Monte Carlo tests |
-| **Experiment Runner** | ✅ YES | `python run_all_experiments.py` |
-| **Dockerized Testbed** | ✅ YES | `docker-compose up -d --build` |
+| **Code Repository** |  YES | Open-source GitHub repository `shri33/ML-Task-Scheduler` |
+| **Dependencies** |  YES | Locked via `package-lock.json` and `requirements.txt` |
+| **Datasets** |  YES | `ml-service/synthetic_cloud_tasks.csv` ($N=15,002$ records) |
+| **Random Seeds** |  YES | Explicit seeds $s \in [1, 30]$ in Monte Carlo tests |
+| **Experiment Runner** |  YES | `python run_all_experiments.py` |
+| **Dockerized Testbed** |  YES | `docker-compose up -d --build` |
 
 ### Step-by-Step Reproduction Instructions
 ```bash

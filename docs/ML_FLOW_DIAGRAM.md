@@ -1,13 +1,13 @@
 # ML Flow Diagram & Explanation
 
-## 🎯 What ML Does in This Project (Simple Answer)
+## What ML Does in This Project (Simple Answer)
 
 > **ML predicts how long a task will take to execute.**  
 > That's it. Nothing more complex.
 
 ---
 
-## 📊 Visual Flow Diagram
+##  Visual Flow Diagram
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -87,13 +87,13 @@
 
 ---
 
-## 🧠 ML Component Details
+##  ML Component Details
 
 ### What Type of ML?
-✅ **Regression** (predicting a number)  
-❌ NOT Classification  
-❌ NOT Deep Learning  
-❌ NOT Neural Networks  
+ **Regression** (predicting a number)  
+ NOT Classification  
+ NOT Deep Learning  
+ NOT Neural Networks  
 
 ### Input Features (What ML receives)
 | Feature | Example Value | Why Needed |
@@ -112,13 +112,13 @@
 ```
 
 ### Model Choices (Our Implementation)
-1. **Random Forest** ✅ Primary (ensemble of decision trees, accurate, explainable)
+1. **Random Forest**  Primary (ensemble of decision trees, accurate, explainable)
 2. **XGBoost** (gradient-boosted trees, highest accuracy)
 3. **Gradient Boosting** (fallback when XGBoost is unavailable)
 
 ---
 
-## 🔄 Without ML vs With ML
+##  Without ML vs With ML
 
 ### WITHOUT ML (Traditional Scheduler)
 ```
@@ -144,7 +144,7 @@ Better resource utilization
 
 ---
 
-## 📈 Performance Improvement
+##  Performance Improvement
 
 | Metric | Without ML | With ML | Improvement |
 |--------|-----------|---------|-------------|
@@ -154,7 +154,7 @@ Better resource utilization
 
 ---
 
-## 🛠️ Technical Implementation
+##  Technical Implementation
 
 ### ML Service (Python + Flask)
 
@@ -214,7 +214,7 @@ async function getExecutionTimePrediction(task, resource) {
 
 ---
 
-## 📝 How to Explain in Viva
+##  How to Explain in Viva
 
 ### Short Answer (30 seconds)
 > "We use machine learning to predict task execution time. The scheduler asks the ML model 'how long will this task take?' before making assignment decisions. This improves scheduling accuracy compared to assuming fixed execution times."
@@ -227,7 +227,7 @@ async function getExecutionTimePrediction(task, resource) {
 
 ---
 
-## ⚠️ Important Points
+##  Important Points
 
 1. **ML is a HELPER, not the decision maker**
    - Scheduler still applies rules and logic
@@ -247,4 +247,3 @@ async function getExecutionTimePrediction(task, resource) {
 
 ---
 
-*This is exactly what professors expect: practical, explainable, justified ML usage.*

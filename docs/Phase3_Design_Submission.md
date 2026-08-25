@@ -386,10 +386,10 @@ CREATE TYPE resource_status_enum AS ENUM ('AVAILABLE', 'BUSY', 'OFFLINE');
 
 | Normal Form | Compliance | Explanation |
 |-------------|------------|-------------|
-| **1NF** | ✅ Yes | All columns contain atomic values; no repeating groups |
-| **2NF** | ✅ Yes | All non-key attributes depend on the entire primary key |
-| **3NF** | ✅ Yes | No transitive dependencies; all attributes depend directly on primary key |
-| **BCNF** | ✅ Yes | Every determinant is a candidate key |
+| **1NF** |  Yes | All columns contain atomic values; no repeating groups |
+| **2NF** |  Yes | All non-key attributes depend on the entire primary key |
+| **3NF** |  Yes | No transitive dependencies; all attributes depend directly on primary key |
+| **BCNF** |  Yes | Every determinant is a candidate key |
 
 #### Data Flow
 
@@ -518,14 +518,14 @@ CREATE TYPE resource_status_enum AS ENUM ('AVAILABLE', 'BUSY', 'OFFLINE');
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
 │  ┌─────────────────────────────────────────────────────────────────────┐  │
-│  │  ✅ Task Scheduled Successfully                                      │  │
+│  │   Task Scheduled Successfully                                      │  │
 │  │                                                                      │  │
 │  │  Task: Data Processing (Task-001)                                    │  │
 │  │  Assigned to: Resource-A (Server 1)                                  │  │
 │  │                                                                      │  │
 │  │  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━│  │
 │  │                                                                      │  │
-│  │  📊 ML PREDICTION                                                    │  │
+│  │   ML PREDICTION                                                    │  │
 │  │  ┌────────────────────────────────────────────────────────────┐    │  │
 │  │  │  Predicted Execution Time:  4.2 seconds                    │    │  │
 │  │  │  Confidence Level:          87%                            │    │  │
@@ -536,8 +536,8 @@ CREATE TYPE resource_status_enum AS ENUM ('AVAILABLE', 'BUSY', 'OFFLINE');
 │  │  │  • Priority: High (5)                                      │    │  │
 │  │  │  • Resource Load: 45%                                      │    │  │
 │  │  └────────────────────────────────────────────────────────────┘    │  │
-│  │                                                                      │  │
-│  │  💡 WHY THIS DECISION?                                               │  │
+│  │                                                                     │  │
+│  │   WHY THIS DECISION?                                               │  │
 │  │  ┌────────────────────────────────────────────────────────────┐    │  │
 │  │  │  "Task-001 was assigned to Resource-A because:             │    │  │
 │  │  │   • Resource-A has the lowest current load (45%)           │    │  │
@@ -801,14 +801,14 @@ CREATE TYPE resource_status_enum AS ENUM ('AVAILABLE', 'BUSY', 'OFFLINE');
 
 | Deliverable | Description | File Format | Status |
 |-------------|-------------|-------------|--------|
-| Architecture Diagrams | High-level system flow and interaction diagrams | PDF/PNG | ✅ |
-| Database Design | ER diagrams and schema details | PDF/PNG/SQL | ✅ |
-| UI/UX Wireframes | Low-fidelity wireframes outlining screen layouts | PDF/PNG | ✅ |
-| UI/UX Prototypes | High-fidelity designs demonstrating interactivity | Figma link | 🔄 |
-| Technical Design Document | Comprehensive document covering all design aspects | PDF/Docx | ✅ |
-| API Documentation | List of API endpoints with specifications | PDF/Docx | ✅ |
-| Component Diagrams | UML class and sequence diagrams | PDF/PNG | ✅ |
-| Design Review Report | Feedback summary and changes made | PDF/Docx | ✅ |
+| Architecture Diagrams | High-level system flow and interaction diagrams | PDF/PNG |  |
+| Database Design | ER diagrams and schema details | PDF/PNG/SQL |  |
+| UI/UX Wireframes | Low-fidelity wireframes outlining screen layouts | PDF/PNG |  |
+| UI/UX Prototypes | High-fidelity designs demonstrating interactivity | Figma link |  |
+| Technical Design Document | Comprehensive document covering all design aspects | PDF/Docx |  |
+| API Documentation | List of API endpoints with specifications | PDF/Docx |  |
+| Component Diagrams | UML class and sequence diagrams | PDF/PNG |  |
+| Design Review Report | Feedback summary and changes made | PDF/Docx |  |
 
 ---
 

@@ -1,4 +1,4 @@
-# 🔬 Empirical Experiment Results & Statistical Analysis Report
+#  Empirical Experiment Results & Statistical Analysis Report
 ## **Intelligent Task Allocation and Scheduling System with ML-Assisted Optimization**
 **Academic Affiliation:** BITS Pilani Online | BSc in Computer Science | `BCS ZC241T`  
 **Team Byte_Hogs:** Shri Srivastava (`2023ebcs593`), Ichha Dwivedi (`2023ebcs125`), Aditi Singh (`2023ebcs498`)  
@@ -7,7 +7,7 @@
 
 ---
 
-## 📑 Executive Summary
+##  Executive Summary
 
 All four rigorous empirical experiments specified in the Master Research & Defense Protocol were executed across multi-seed Monte Carlo simulations, held-out real-world trace datasets, burst ingestion stress tests, and RL-vs-heuristic runtime benchmarks.
 
@@ -17,16 +17,16 @@ All four rigorous empirical experiments specified in the Master Research & Defen
 ├─────────┬────────────────────────────────────────┬──────────────────────┬──────────────┤
 │ Code    │ Experiment Focus                       │ Target / Hypothesis  │ Status       │
 ├─────────┼────────────────────────────────────────┼──────────────────────┼──────────────┤
-│ EXP-01  │ 30-Seed Statistical Convergence Test   │ p < 0.05 vs Heuristics│ ✅ VERIFIED  │
-│ EXP-02  │ Conformal Coverage Guardrail (α=0.10)  │ Empirical Cov ≥ 90%  │ ✅ VERIFIED  │
-│ EXP-03  │ Scheduling Throughput & Queue Latency  │ Burst > 1,000 tasks/s │ ✅ VERIFIED  │
-│ EXP-04  │ Deep RL Policy vs Metaheuristic Trade-off│ Sub-ms Forward Pass │ ✅ VERIFIED  │
+│ EXP-01  │ 30-Seed Statistical Convergence Test   │ p < 0.05 vs Heuristics│  VERIFIED  │
+│ EXP-02  │ Conformal Coverage Guardrail (α=0.10)  │ Empirical Cov ≥ 90%  │  VERIFIED  │
+│ EXP-03  │ Scheduling Throughput & Queue Latency  │ Burst > 1,000 tasks/s │  VERIFIED  │
+│ EXP-04  │ Deep RL Policy vs Metaheuristic Trade-off│ Sub-ms Forward Pass │  VERIFIED  │
 └─────────┴────────────────────────────────────────┴──────────────────────┴──────────────┘
 ```
 
 ---
 
-## 📊 EXP-01: Multi-Seed Statistical Convergence Test
+##  EXP-01: Multi-Seed Statistical Convergence Test
 - **Protocol:** 30 independent runs per workload ($N \in \{50, 100, 150, 200, 250, 300\}$), distinct random seeds ($s = 1 \dots 30$).
 - **Controlled Setup:** Heterogeneous Fog Topology ($M = 10$, 8 Fog Nodes + 2 Cloud Nodes), $w_{\text{delay}} = 0.5, w_{\text{energy}} = 0.5$.
 - **Statistical Significance:** Non-parametric Wilcoxon Signed-Rank Two-Sided Test evaluated against the proposed Hybrid Heuristic (HH).
@@ -62,7 +62,7 @@ All four rigorous empirical experiments specified in the Master Research & Defen
 
 ---
 
-## 🎯 EXP-02: ML Inference Guardrail & Conformal Coverage Verification
+##  EXP-02: ML Inference Guardrail & Conformal Coverage Verification
 - **Dataset:** `kaggle_cloud_tasks.csv` ($N = 15,002$ task execution records).
 - **Split:** 60% Train ($N=9,001$), 20% Conformal Calibration ($N=3,000$), 20% Held-Out Test ($N=3,001$).
 - **Base Regressor:** Random Forest ($n_{\text{trees}}=100, \text{max\_depth}=12$).
@@ -72,16 +72,16 @@ All four rigorous empirical experiments specified in the Master Research & Defen
 
 | Significance Level ($\alpha$) | Target Confidence ($1 - \alpha$) | Conformal Quantile ($\hat{q}$) | Prediction Interval Width ($2\hat{q}$) | Empirical Test Coverage (%) | Formal Guarantee Met? |
 |:---:|:---:|:---:|:---:|:---:|:---:|
-| $\alpha = 0.05$ | **95.0%** | $\pm 4.700\text{ s}$ | $9.400\text{ s}$ | **95.10%** | ✅ **YES** ($95.10\% \ge 95.0\%$) |
-| $\alpha = 0.10$ | **90.0%** | $\pm 2.399\text{ s}$ | $4.799\text{ s}$ | **90.00%** | ✅ **YES** ($90.00\% \ge 90.0\%$) |
-| $\alpha = 0.15$ | **85.0%** | $\pm 1.541\text{ s}$ | $3.083\text{ s}$ | **85.00%** | ✅ **YES** ($85.00\% \ge 85.0\%$) |
-| $\alpha = 0.20$ | **80.0%** | $\pm 1.060\text{ s}$ | $2.120\text{ s}$ | **78.70%** | ⚠️ Bounded Variance |
+| $\alpha = 0.05$ | **95.0%** | $\pm 4.700\text{ s}$ | $9.400\text{ s}$ | **95.10%** |  **YES** ($95.10\% \ge 95.0\%$) |
+| $\alpha = 0.10$ | **90.0%** | $\pm 2.399\text{ s}$ | $4.799\text{ s}$ | **90.00%** |  **YES** ($90.00\% \ge 90.0\%$) |
+| $\alpha = 0.15$ | **85.0%** | $\pm 1.541\text{ s}$ | $3.083\text{ s}$ | **85.00%** |  **YES** ($85.00\% \ge 85.0\%$) |
+| $\alpha = 0.20$ | **80.0%** | $\pm 1.060\text{ s}$ | $2.120\text{ s}$ | **78.70%** |  Bounded Variance |
 
 > **Conclusion on ML Reliability:** At the target operational threshold $\alpha = 0.10$, the Split Conformal Prediction engine achieves exact **90.00% empirical coverage** on unseen real-world trace data with tight prediction margins of $\pm 2.40\text{ s}$, fulfilling the strict finite-sample non-exchangeability safety guarantee.
 
 ---
 
-## ⚡ EXP-03: Real-Time Scheduling Throughput & Worker Scalability
+##  EXP-03: Real-Time Scheduling Throughput & Worker Scalability
 - **Test Protocol:** Burst batch task ingestion profiling from 100 to 5,000 tasks per submission.
 - **Metrics:** Throughput (tasks/second), P50 median latency, P95, P99 tail latency.
 
@@ -97,7 +97,7 @@ All four rigorous empirical experiments specified in the Master Research & Defen
 
 ---
 
-## 🧠 EXP-04: Deep RL Attention Policy vs Metaheuristic Runtime Trade-off
+##  EXP-04: Deep RL Attention Policy vs Metaheuristic Runtime Trade-off
 - **Protocol:** Evaluates single-pass neural attention inference against 50-iteration Hybrid Heuristic across network scales $M \in \{5, 10, 20, 50\}$ nodes ($N = 100$ tasks).
 
 ### Decision Latency & Solution Quality Comparison
@@ -109,6 +109,6 @@ All four rigorous empirical experiments specified in the Master Research & Defen
 | **$M = 20$** | **0.032 ms** | 65.38 ms | **$2,030\times$ Faster** | $0.004840$ | **$0.005468$** | $1.13\times$ |
 | **$M = 50$** | **0.019 ms** | 66.46 ms | **$3,426\times$ Faster** | $0.003779$ | **$0.004085$** | $1.08\times$ |
 
-### 🔍 Key Engineering Insight for Examiners:
+###  Key Engineering Insight for Examiners:
 - **Sub-Millisecond Regimes (Real-Time Edge Ingestion):** Deep RL policy inference delivers decisions in under **0.03 milliseconds** ($> 2,000\times$ faster than iterative heuristics), making it optimal for dynamic real-time fog environments.
 - **Batch Planning / Heavy Optimization Regimes:** The Hybrid Heuristic (IPSO + IACO) achieves the highest global objective fitness score ($J(\mathbf{X})$) by thoroughly exploring multi-dimensional combinatorial search space.
