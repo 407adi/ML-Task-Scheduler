@@ -298,7 +298,7 @@ $$\text{Penalty}_{hardware} = \begin{cases} 1000 \times \left(\frac{\text{ReqMem
 
 ---
 
-## 🧠 Implemented Scheduling Strategies (10 Algorithms)
+##  Implemented Scheduling Strategies (10 Algorithms)
 
 | Category | Algorithm | Algorithmic Complexity | Optimization Target | Best Used When |
 |:---|:---|:---|:---|:---|
@@ -471,7 +471,7 @@ docker compose ps
 docker exec task-scheduler-backend npx prisma db seed
 ```
 
-#### 🌐 Operational Service Endpoints:
+####  Operational Service Endpoints:
 | Service | Local URL | Description |
 |:---|:---|:---|
 | **Frontend Application** | [http://localhost:3000](http://localhost:3000) | Main React Management Dashboard |
@@ -605,7 +605,7 @@ The ML service provides fast ML-assisted execution time estimations based on tas
 
 ---
 
-## 🗄️ Database Schema (30 Prisma Entities)
+##  Database Schema (30 Prisma Entities)
 
 The PostgreSQL database is organized into 5 relational domains:
 
@@ -665,7 +665,7 @@ The PostgreSQL database is organized into 5 relational domains:
 
 ---
 
-## 🧪 Testing & Quality Assurance Audit Suite
+##  Testing & Quality Assurance Audit Suite
 
 The codebase includes an extensive multi-tier test suite:
 
