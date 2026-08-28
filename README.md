@@ -25,8 +25,8 @@ Bridging the gap between theoretical academic research and applied software engi
 > **Academic Affiliation**: BITS Pilani | BSc Computer Science 
 > **Team Byte_hogs**: Shri Srivastava (`2023ebcs593`), Ichha Dwivedi (`2023ebcs125`), Aditi Singh (`2023ebcs498`)  
 > **Project Advisor / Supervisor**: Swapnil Saurav
-> **Demo - https://youtu.be/-FzRKRH-U_w
-> ** ML Task Scheduler – Final Project Demo, Usage & Testing - https://youtu.be/WrWFN3N8qm0
+> **Demo**: - https://youtu.be/-FzRKRH-U_w
+> **ML Task Scheduler – Final Project Demo, Usage & Testing**:- https://youtu.be/WrWFN3N8qm0
 
 
 ---
